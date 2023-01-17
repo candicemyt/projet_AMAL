@@ -12,8 +12,8 @@ RELATIONS = set()
 ATTRIBUTES = set()
 
 def init_files(set_type):
-    path_dataset_relations_file = f"process_data/{set_type}/dataset_relations.csv"
-    path_dataset_attributes_file = f"process_data/{set_type}/dataset_attributes.csv"
+    path_dataset_relations_file = f"VGA_VGR/{set_type}/dataset_relations.csv"
+    path_dataset_attributes_file = f"VGA_VGR/{set_type}/dataset_attributes.csv"
 
     if path.exists(path_dataset_relations_file):
         dataset_relations_file = open(path_dataset_relations_file , 'w')
@@ -58,9 +58,9 @@ def extract_image(obj1_data, obj2_data, image_file_name):
     min_x = min(x_list)
     max_x = max(x_list)
 
-    image = cv2.imread(f"raw_data/images/{image_file_name.split('_')[0]}.jpg")
+    image = cv2.imread(f"GQA_raw/images/{image_file_name.split('_')[0]}.jpg")
     extracted_image = image[min_y: min_y + (max_y - min_y), min_x: min_x + (max_x - min_x)]
-    cv2.imwrite(f"process_data/images/{image_file_name}.jpg", extracted_image)
+    cv2.imwrite(f"VGA_VGR/images/{image_file_name}.jpg", extracted_image)
 
 
 def is_good_size(object_id, image_data):
@@ -72,13 +72,13 @@ def generate_dataset(set_type):
 
     writer_rel, writer_att, dataset_relations_file, dataset_attributes_file = init_files(set_type)
 
-    with open(f"raw_data/{set_type}_sceneGraphs.json", "r") as f:
+    with open(f"GQA_raw/{set_type}_sceneGraphs.json", "r") as f:
         data_raw = json.load(f)
 
     for id_image, image_data in tqdm(data_raw.items()):
         cpt = 0 #how many images extracted from this image
 
-        if path.exists(f"raw_data/images/{id_image}.jpg"):
+        if path.exists(f"GQA_raw/images/{id_image}.jpg"):
             obj_pairs = dict()
             for object_id, object_data in image_data["objects"].items():
                 if is_good_size(object_id, image_data):
