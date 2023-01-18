@@ -1,3 +1,3 @@
-raw_data/
-process_data/
+ARO_benchmark/GQA_raw/
+ARO_benchmark/VGA_VGR/
 .idea/

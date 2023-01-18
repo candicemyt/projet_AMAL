@@ -3,17 +3,17 @@ import cv2
 from os import path
 import csv
 from tqdm import tqdm
+from itertools import product
 
 RELATIONS_TO_DEL = ["standing_by", "standing next to", "touching", "connected to", "by", "sitting next to", 'leaning against', "around", "parked next to", "chained to", "walking by", "hugging", "between", "on the other side of", "near", "sitting beside", "next to", "with", "tied to", "pulled by", "beside", "on the side of", "playing", "standing near", "parked near", "surrounding"]
 RELATIONS_TO_KEEP = ["above", "at", "behind", "below", "beneath", "in", "in front of", "inside", "on", "on top of", "to the left of", "to the right of", 'under', "carrying", "covered by", "covered in", "covered with", "covering", "cutting", "eating", "feeding", "grazing on", "hanging on", "holding", "leaning on", "looking at", "lying in", "lying on", "parked on", "reflected in", "resting on", "riding", "sitting at", "sitting in", "sitting on", "sitting on top of", "standing by", "standing in", "standing on", "surrounded by", "using", "walking in", "walking on", "watching", "wearing"]
-print(len(RELATIONS_TO_DEL))
-print(len(RELATIONS_TO_KEEP))
+
 RELATIONS = set()
 ATTRIBUTES = set()
 
 def init_files(set_type):
-    path_dataset_relations_file = f"process_data/{set_type}/dataset_relations.csv"
-    path_dataset_attributes_file = f"process_data/{set_type}/dataset_attributes.csv"
+    path_dataset_relations_file = f"VGA_VGR/{set_type}/dataset_relations.csv"
+    path_dataset_attributes_file = f"VGA_VGR/{set_type}/dataset_attributes.csv"
 
     if path.exists(path_dataset_relations_file):
         dataset_relations_file = open(path_dataset_relations_file , 'w')
@@ -38,8 +38,8 @@ def create_relations(object1, object2, relation, id, writer_rel):
         RELATIONS.add(relation)
 
 def create_attributes(object1, object2, attribute1, attribute2, id, writer_att):
-    ATTRIBUTES.add(attribute1)
-    ATTRIBUTES.add(attribute2)
+    if (attribute2, attribute1) not in ATTRIBUTES:
+        ATTRIBUTES.add((attribute1, attribute2))
     writer_att.writerow([id, f"the {attribute1} {object1} and the {attribute2} {object2}", 1])
     writer_att.writerow([id, f"the {attribute2} {object1} and the {attribute1} {object2}", 0])
 
@@ -58,9 +58,9 @@ def extract_image(obj1_data, obj2_data, image_file_name):
     min_x = min(x_list)
     max_x = max(x_list)
 
-    image = cv2.imread(f"raw_data/images/{image_file_name.split('_')[0]}.jpg")
+    image = cv2.imread(f"GQA_raw/images/{image_file_name.split('_')[0]}.jpg")
     extracted_image = image[min_y: min_y + (max_y - min_y), min_x: min_x + (max_x - min_x)]
-    cv2.imwrite(f"process_data/images/{image_file_name}.jpg", extracted_image)
+    cv2.imwrite(f"VGA_VGR/images/{image_file_name}.jpg", extracted_image)
 
 
 def is_good_size(object_id, image_data):
@@ -72,20 +72,19 @@ def generate_dataset(set_type):
 
     writer_rel, writer_att, dataset_relations_file, dataset_attributes_file = init_files(set_type)
 
-    with open(f"raw_data/{set_type}_sceneGraphs.json", "r") as f:
+    with open(f"GQA_raw/{set_type}_sceneGraphs.json", "r") as f:
         data_raw = json.load(f)
 
     for id_image, image_data in tqdm(data_raw.items()):
         cpt = 0 #how many images extracted from this image
 
-        if path.exists(f"raw_data/images/{id_image}.jpg"):
+        if path.exists(f"GQA_raw/images/{id_image}.jpg"):
             obj_pairs = dict()
             for object_id, object_data in image_data["objects"].items():
                 if is_good_size(object_id, image_data):
                     for relation_data in object_data["relations"]:
                         if (object_id, relation_data["object"]) not in obj_pairs.keys() and (relation_data["object"], object_id) not in obj_pairs.keys():
                             if is_good_size(relation_data["object"], image_data):
-                                #print(object_id, relation_data["object"], relation_data["name"])
                                 obj_pairs[(object_id, relation_data["object"])]= relation_data["name"]
 
 
@@ -102,15 +101,15 @@ def generate_dataset(set_type):
                     cpt +=1
                     #extract_image(obj1_data, obj2_data, process_image_id)
 
-                    attributes_obj1 = image_data["objects"][obj1]["attributes"]
-                    attributes_obj2 = image_data["objects"][obj2]["attributes"]
+                    attributes_obj1 = list(set(image_data["objects"][obj1]["attributes"]) - set(image_data["objects"][obj2]["attributes"]))
+                    attributes_obj2 = list(set(image_data["objects"][obj2]["attributes"]) - set(image_data["objects"][obj1]["attributes"]))
+
                     att_pairs = []
                     if len(attributes_obj1) > 0 and len(attributes_obj2) > 0:
-                        for att_obj1 in attributes_obj1:
-                            for att_obj2 in attributes_obj2:
-                                if att_obj1 != att_obj2 and (att_obj1, att_obj2) not in att_pairs and att_obj1 not in attributes_obj2 and att_obj2 not in attributes_obj1:
-                                    att_pairs.append((att_obj1, att_obj2))
-                                    create_attributes(name_obj1, name_obj2, att_obj1, att_obj2, process_image_id, writer_att)
+                        for (att_obj1, att_obj2) in product(attributes_obj1, attributes_obj2):
+                            if att_obj1 != att_obj2 and (att_obj1, att_obj2) not in att_pairs and (att_obj2, att_obj1) not in att_pairs :
+                                att_pairs.append((att_obj1, att_obj2))
+                                create_attributes(name_obj1, name_obj2, att_obj1, att_obj2, process_image_id, writer_att)
         else:
             continue
 
