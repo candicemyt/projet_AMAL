@@ -3,4 +3,8 @@ ARO_benchmark/VGA_VGR/
 .idea/
 raw_data/
 process_data/
+<<<<<<< HEAD
 venv/
+=======
+venv/
+>>>>>>> 76c133f (gitignore)
