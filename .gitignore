@@ -3,3 +3,4 @@ ARO_benchmark/VGA_VGR/
 .idea/
 raw_data/
 process_data/
+venv/
