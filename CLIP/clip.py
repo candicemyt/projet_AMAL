@@ -47,17 +47,21 @@ class AttentionBlock(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, embedding_size, seq_length, numh_heads) -> None:
+    def __init__(self, embedding_size, seq_length, num_heads, n_blocks) -> None:
         super().__init__()
         self.positional_encoding = nn.Parameters(torch.randn(seq_length, embedding_size))
-
+        # create list of attention block
     def forward(self, x):
+        #loop over the attention blocks
         x = x + self.positional_encoding
         pass
 
 class VisionTransformer(nn.Module):
     def __init__(self) -> None:
         super().__init__()
+        #conv layer to embed patches
+        #classical transformer afterward
+        #may need 2 layer normalizations (pre and post transformer as in openai)
 
     def forward(self):
         pass
