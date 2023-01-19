@@ -4,4 +4,5 @@ ARO_benchmark/VGA_VGR/
 raw_data/
 process_data/
 venv/
-
+NegCLIP/cocoapi-master/
+COCO/

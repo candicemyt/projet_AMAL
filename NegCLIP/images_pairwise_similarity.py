@@ -1,19 +1,43 @@
 import torch
 import clip
-from PIL import Image
+from torchvision.datasets import CocoCaptions
+from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
+from os import path
+import csv
+import numpy as np
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+set_type = 'val'
+path_pairwise_sim_path = f"../COCO/pairwise_sim/{set_type}.csv"
+
+if path.exists(path_pairwise_sim_path):
+    dataset_pairwise_sim_file = open(path_pairwise_sim_path, 'w')
+else:
+    dataset_pairwise_sim_file = open(path_pairwise_sim_path, 'x')
+
+writer = csv.writer(dataset_pairwise_sim_file)
+
+
+
 model, preprocess = clip.load("ViT-B/32", device=device)
 
-image = preprocess(Image.open("2.jpg")).unsqueeze(0).to(device)
-image2 = preprocess(Image.open("6.jpg")).unsqueeze(0).to(device)
-#text = clip.tokenize(["a diagram", "a dog", "a cat"]).to(device)
-images = [image, image2]
+coco_dts = CocoCaptions(root='../COCO/val2014/',
+                        annFile='../COCO/annotations/captions_val2014.json',
+                        transform=preprocess)
+coco_loader = DataLoader(coco_dts)
+
+encoded_images = []
 with torch.no_grad():
-    for i in range(0, len(images), 2) :
-        image_features = model.encode_image(images[i])
-        image2_features = model.encode_image(images[i+1])
+    # boucle de processing / encoding
+    for image, _ in coco_loader:
+        encoded_images.append(model.encode_image(image))
 
-        similarity = image2_features.cpu().numpy() @ image_features.cpu().numpy().T
+    # boucle de calcul de similarité
+    for image_features in encoded_images:
+        similarities = []
+        for image2_features in encoded_images:
+            similarities.append(image2_features.cpu().numpy() @ image_features.cpu().numpy().T)
+        similarities_sorted = torch.argsort(torch.Tensor(np.array(similarities)).squeeze(), descending=True)
+        writer.writerow([int(s) for s in similarities_sorted[0:4]])
 
-print(similarity)
