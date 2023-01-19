@@ -5,4 +5,6 @@ raw_data/
 process_data/
 venv/
 NegCLIP/cocoapi-master/
-COCO/
+NegCLIP/__pycache__/
+COCO/annotations
+COCO/val2014
