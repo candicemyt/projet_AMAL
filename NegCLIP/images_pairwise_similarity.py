@@ -7,6 +7,7 @@ import csv
 import numpy as np
 # TODO : add tqdm and preprocess images by batch
 # TODO clean (function, main , ...)
+# TODO à changer dossier
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 set_type = 'val'
