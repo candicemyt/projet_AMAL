@@ -6,3 +6,5 @@ process_data/
 venv/
 NegCLIP/cocoapi-master/
 COCO/
+CLIP/__pycache__/
+CLIP/dev.ipynb
