@@ -2,19 +2,20 @@ import torch
 import clip
 from torchvision.datasets import CocoCaptions
 from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
 from os import path
 import csv
 import numpy as np
+# TODO : add tqdm and preprocess images by batch
+# TODO clean (function, main , ...)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 set_type = 'val'
-path_pairwise_sim_path = f"../COCO/pairwise_sim/{set_type}.csv"
+pairwise_sim_path = f"../COCO/pairwise_sim/{set_type}.csv"
 
-if path.exists(path_pairwise_sim_path):
-    dataset_pairwise_sim_file = open(path_pairwise_sim_path, 'w')
+if path.exists(pairwise_sim_path):
+    dataset_pairwise_sim_file = open(pairwise_sim_path, 'w')
 else:
-    dataset_pairwise_sim_file = open(path_pairwise_sim_path, 'x')
+    dataset_pairwise_sim_file = open(pairwise_sim_path, 'x')
 
 writer = csv.writer(dataset_pairwise_sim_file)
 

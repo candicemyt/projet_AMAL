@@ -5,6 +5,8 @@ import csv
 from tqdm import tqdm
 from itertools import product
 
+# TODO : clean and comment
+
 RELATIONS_TO_DEL = ["standing_by", "standing next to", "touching", "connected to", "by", "sitting next to", 'leaning against', "around", "parked next to", "chained to", "walking by", "hugging", "between", "on the other side of", "near", "sitting beside", "next to", "with", "tied to", "pulled by", "beside", "on the side of", "playing", "standing near", "parked near", "surrounding"]
 RELATIONS_TO_KEEP = ["above", "at", "behind", "below", "beneath", "in", "in front of", "inside", "on", "on top of", "to the left of", "to the right of", 'under', "carrying", "covered by", "covered in", "covered with", "covering", "cutting", "eating", "feeding", "grazing on", "hanging on", "holding", "leaning on", "looking at", "lying in", "lying on", "parked on", "reflected in", "resting on", "riding", "sitting at", "sitting in", "sitting on", "sitting on top of", "standing by", "standing in", "standing on", "surrounded by", "using", "walking in", "walking on", "watching", "wearing"]
 
@@ -99,7 +101,7 @@ def generate_dataset(set_type):
                     obj1_data = image_data["objects"][obj1]
                     obj2_data = image_data["objects"][obj2]
                     cpt +=1
-                    #extract_image(obj1_data, obj2_data, process_image_id)
+                    extract_image(obj1_data, obj2_data, process_image_id)
 
                     attributes_obj1 = list(set(image_data["objects"][obj1]["attributes"]) - set(image_data["objects"][obj2]["attributes"]))
                     attributes_obj2 = list(set(image_data["objects"][obj2]["attributes"]) - set(image_data["objects"][obj1]["attributes"]))

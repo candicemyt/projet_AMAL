@@ -5,6 +5,8 @@ raw_data/
 process_data/
 venv/
 NegCLIP/cocoapi-master/
-COCO/
 CLIP/__pycache__/
 CLIP/dev.ipynb
+NegCLIP/__pycache__/
+COCO/annotations
+COCO/val2014
