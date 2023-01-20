@@ -32,3 +32,4 @@ if __name__ == "__main__":
                    input_resolution=224) #par calcul ça donne ça
 
     print(my_clip)
+    #openai multihead attention != Transformer from scratch -> look at the doc of F.multihead_attention_forward

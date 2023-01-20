@@ -1,7 +1,7 @@
 import torch 
 from torch import nn
 import torch.nn.functional as F
-
+import numpy as np
 
 
 class Attentionlayer(nn.Module):
@@ -85,7 +85,7 @@ class VisionTransformer(nn.Module):
         self.num_heads = num_heads
 
         scale = embedding_size ** -0.5
-        self.positional_encoding = nn.Parameter(torch.empty(scale * torch.randn((input_resolution // kernel_size) ** 2 + 1, embedding_size)))
+        self.positional_encoding = nn.Parameter(scale * torch.randn((input_resolution // kernel_size) ** 2 + 1, embedding_size))
         self.class_embedding = nn.Parameter(scale * torch.randn(embedding_size))
 
         self.convolution = nn.Conv2d(in_channels=3, out_channels=embedding_size, kernel_size = kernel_size, stride=stride, bias=False)
@@ -121,16 +121,15 @@ class Clip(nn.Module):
                                         )
 
         vision_heads = vision_embedding // 64
-
         self.image_encoder = VisionTransformer(embedding_size=vision_embedding,
-                                               num_heads=num_heads,
+                                               num_heads=vision_heads,
                                                n_blocks=n_blocks,
                                                kernel_size=kernel_size,
                                                stride=stride,
                                                output_dim=output_dim, 
                                                input_resolution=input_resolution)
 
-        self.logit_scale = nn.Parameter(torch.ones([]) * torch.log(1 / 0.07))
+        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
     def encode_text(self, x):
         return self.text_encoder(x)
