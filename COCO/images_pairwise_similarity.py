@@ -11,7 +11,7 @@ import numpy as np
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 set_type = 'val'
-pairwise_sim_path = f"../COCO/pairwise_sim/{set_type}.csv"
+pairwise_sim_path = f"/pairwise_sim/{set_type}.csv"
 
 if path.exists(pairwise_sim_path):
     dataset_pairwise_sim_file = open(pairwise_sim_path, 'w')
