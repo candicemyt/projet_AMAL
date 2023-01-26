@@ -61,26 +61,19 @@ def generate_neg_captions(set_type):
         data = json.load(f)
     raw_captions_list = data["annotations"]
 
-    neg_captions_list = []
-    pos_captions_list = []
+    processed_captions_list = []
 
     # shuffling the captions
     for caption_data in tqdm(raw_captions_list):
         pos_caption, neg_captions = shuffle_caption(caption_data["caption"])
-        if len(neg_captions) > 0:
-            neg_captions_list.append({'image_id' : caption_data['image_id'], 'id' : caption_data['id'], 'neg_captions' : neg_captions})
-            pos_captions_list.append(caption_data) # we keep only the captions that have negative captions
+        if len(neg_captions) > 0: # we keep only the captions that have negative captions
+            caption_data["neg_captions"] = neg_captions
+            processed_captions_list.append(caption_data)
 
     # write files
-    path_neg_captions_file = f"annotations/neg_captions_{set_type}.json"
-    if path.exists(path_neg_captions_file):
-        neg_captions_file = open(path_neg_captions_file, 'w')
-    else:
-        neg_captions_file = open(path_neg_captions_file, 'x')
-    json.dump({"annotations" : neg_captions_list}, neg_captions_file)
 
-    data["annotations"] = pos_captions_list
-    with open(f"annotations/captions_modif_{set_type}2014.json", 'w') as f:
+    data["annotations"] = processed_captions_list
+    with open(f"annotations/captions_negcaptions_{set_type}2014.json", 'w') as f:
         json.dump(data, f)
 
 

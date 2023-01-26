@@ -1,12 +1,9 @@
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
-import os
+import json
 import torch
-from torchvision.datasets import CocoCaptions
+from torchvision.datasets import CocoDetection
 
-
-# TODO : if none of the caption of an image has negative captions -> delete from the batch
-# TODO : preprocess les negative captions
 # TODO : ignore strong alt for CLIP-FT
 
 
@@ -26,11 +23,11 @@ def choose_neg_caption_per_caption(all_neg_captions):
 
 
 
-class COCODataset(CocoCaptions):
-    def __init__(self, root, pairwise_sim_path, annFile, transforms=None, transform=None, target_transform=None):
+class COCODataset(CocoDetection):
+    def __init__(self, root, pairwise_sim_path, negcaptions_path, annFile, transforms=None, transform=None, target_transform=None):
         super().__init__(root, annFile, transform, target_transform, transforms)
 
-        # path of the csv file with the 3 nearest neighbors of each image
+        # loading the 3 nearest neighbors of each image
         self.pairwise_sim_path = pairwise_sim_path
         nearest_neighbors = dict()
         with open(pairwise_sim_path, 'r') as f:
@@ -41,6 +38,16 @@ class COCODataset(CocoCaptions):
         # dictionanry with key : image index, value : list of id of 3 nearest neighbors of each image
         self.nearest_neighbors = nearest_neighbors
 
+        # loading the shuffled captions
+        self.negcaptions_path = negcaptions_path
+        with open(negcaptions_path, 'r') as f:
+            negcaptions = json.load(f)["annotations"]
+        self.negcaptions = negcaptions
+
+    def _load_target(self, id: int):
+        ids = self.coco.getAnnIds(id)
+
+        return self.coco.loadAnns(ids)
     def __getitem__(self, index: int):
         image, pos_captions = super().__getitem__(index)
 
@@ -53,6 +60,8 @@ class COCODataset(CocoCaptions):
         strong_alt_captions = self._load_target(strong_alt_id)
 
         # compute the negative captions and choose only one for each positive caption
+        id = self.ids[index] #id in root directory
+        all_neg_captions = [data_neg_capt["neg_captions"] for data_neg_capt in self.negcaptions]
         #pos_captions, all_neg_captions = shuffle_captions(pos_captions)
         neg_captions = []  #choose_neg_caption_per_caption(all_neg_captions)
         #strong_alt_captions, all_neg_strong_alt_captions = shuffle_captions(strong_alt_captions)
