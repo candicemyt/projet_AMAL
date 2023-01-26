@@ -3,24 +3,13 @@ from torchvision import transforms, utils
 import os
 import torch
 from torchvision.datasets import CocoCaptions
-import spacy
+
 
 # TODO : if none of the caption of an image has negative captions -> delete from the batch
 # TODO : preprocess les negative captions
 # TODO : ignore strong alt for CLIP-FT
 
-def shuffle_one_caption(caption, first_token, second_token):
-    """
-    Shuffle the caption : replacing first_token by second_token and vice versa
-    """
-    sentence_beg = caption.index(first_token)
-    sentence_mid_beg = caption.index(first_token) + len(first_token)
-    sentence_mid_end = caption.index(second_token)
-    sentence_end = caption.index(second_token) + len(second_token)
-    shuffled_caption = caption[0:sentence_beg] + second_token + \
-                       caption[sentence_mid_beg:sentence_mid_end] + \
-                       first_token + caption[sentence_end::]
-    return shuffled_caption
+
 
 
 def choose_neg_caption_per_caption(all_neg_captions):
@@ -35,37 +24,6 @@ def choose_neg_caption_per_caption(all_neg_captions):
     return neg_captions
 
 
-def shuffle_captions(captions):
-    """
-    Shuffle 5 times (maximum) each caption of captions
-    :param captions: list of string (caption)
-    :return: the positive captions that are keeped and a list of negative captions for each one
-    """
-    nlp = spacy.load("en_core_web_sm")
-    all_pos_captions = []
-    all_neg_captions = []
-    for caption in captions:
-        shuffled_captions = []
-        doc = nlp(caption)  # pos tagging with spacy
-
-        for word_type in ["NOUN", "ADJ", "ADV", "VERB"]:
-            word_list = [token.text for token in doc if token.pos_ == word_type]
-            if len(word_list) >= 2:  # shuffle possible only if we have at least two words of the same type
-                shuffled_caption = shuffle_one_caption(caption, word_list[0], word_list[-1])
-                shuffled_captions.append(shuffled_caption)
-
-        noun_phrases = [noun_phrase for noun_phrase in doc.noun_chunks if
-                        len(noun_phrase) > 3]  # noun phrases with spacy # TODO : len> 3 à modif
-
-        if len(noun_phrases) >= 2:  # shuffle possible only if we have at least two noun phrases
-            shuffled_caption = shuffle_one_caption(caption, str(noun_phrases[0]), str(noun_phrases[-1]))
-            shuffled_captions.append(shuffled_caption)
-
-        if len(shuffled_captions) > 0:  # if the cpation generates negative captions they are stored
-            all_pos_captions.append(caption)
-            all_neg_captions.append(shuffled_captions)
-
-    return all_pos_captions, all_neg_captions
 
 
 class COCODataset(CocoCaptions):
