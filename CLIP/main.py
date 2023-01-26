@@ -1,4 +1,4 @@
-import clip
+import my_clip
 import torch
 from PIL import Image
 import os
@@ -6,13 +6,15 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'
 import requests
 from transformers import CLIPProcessor, CLIPModel
 from importlib import reload
-reload(clip)
-from clip import Clip
+reload(my_clip)
+from my_clip import Clip
+import clip
 
 
 if __name__ == "__main__":
     
 
+    model, preprocess = clip.load("ViT-B/32", device="cpu")
     #model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
     processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
@@ -21,7 +23,7 @@ if __name__ == "__main__":
 
     inputs = processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True)
 
-    #print(model)
+    print(model)
     #print(sum(p.numel() for p in model.parameters()))
     my_clip = Clip(embedding_size=512, #certain
                    vision_embedding=768, #certain
