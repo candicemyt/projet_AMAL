@@ -19,8 +19,6 @@ def choose_neg_caption_per_caption(all_neg_captions):
     return neg_captions
 
 
-
-
 class COCODataset(CocoDetection):
     def __init__(self, root, pairwise_sim_path, annFile, transforms=None, transform=None, target_transform=None):
         super().__init__(root, annFile, transform, target_transform, transforms)
@@ -33,7 +31,7 @@ class COCODataset(CocoDetection):
                 ids = line.split(',')
                 nearest_neighbors[int(ids[0])] = [int(id) for id in ids[1::]]
 
-        # dictionanry with key : image index, value : list of id of 3 nearest neighbors of each image
+        # dictionnary with key : image index, value : list of id of 3 nearest neighbors of each image
         self.nearest_neighbors = nearest_neighbors
 
     def _load_target(self, id: int):
@@ -52,7 +50,7 @@ class COCODataset(CocoDetection):
 
         # choose one strong alternative image (and its respective captions) between the k=3 nearest neighbors
         rd_image_neighbor = torch.randint(0, 3, (1,))
-        strong_alt_id = self.nearest_neighbors[index][rd_image_neighbor]  # id in root directory
+        strong_alt_id = self.nearest_neighbors[id][rd_image_neighbor]  # id in root directory
         strong_alt_image = self._load_image(strong_alt_id)
         strong_alt_captions, neg_strong_alt_captions = self._load_target(strong_alt_id)
 
@@ -63,6 +61,10 @@ class COCODataset(CocoDetection):
         # transforming the data
         image = self.transform(image)
         strong_alt_image = self.transform(strong_alt_image)
+        pos_captions = self.target_transform(pos_captions)
+        neg_captions = self.target_transform(neg_captions)
+        strong_alt_captions = self.target_transform(strong_alt_captions)
+        neg_strong_alt_captions = self.target_transform(neg_strong_alt_captions)
 
 
         return image, pos_captions, neg_captions, strong_alt_image, strong_alt_captions, neg_strong_alt_captions
