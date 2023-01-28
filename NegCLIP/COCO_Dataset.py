@@ -52,14 +52,17 @@ class COCODataset(CocoDetection):
 
         # choose one strong alternative image (and its respective captions) between the k=3 nearest neighbors
         rd_image_neighbor = torch.randint(0, 3, (1,))
-        strong_alt_index = self.nearest_neighbors[index][rd_image_neighbor]  # index in dataloader
-        strong_alt_id = self.ids[strong_alt_index]  # id in root directory
+        strong_alt_id = self.nearest_neighbors[index][rd_image_neighbor]  # id in root directory
         strong_alt_image = self._load_image(strong_alt_id)
-        strong_alt_image = self.transform(strong_alt_image)
         strong_alt_captions, neg_strong_alt_captions = self._load_target(strong_alt_id)
 
-        # compute the negative captions and choose only one for each positive caption
+        # choose only one negative caption for each positive caption
         neg_captions = choose_neg_caption_per_caption(neg_captions)
         neg_strong_alt_captions = choose_neg_caption_per_caption(neg_strong_alt_captions)
+
+        # transforming the data
+        image = self.transform(image)
+        strong_alt_image = self.transform(strong_alt_image)
+
 
         return image, pos_captions, neg_captions, strong_alt_image, strong_alt_captions, neg_strong_alt_captions

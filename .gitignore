@@ -12,6 +12,7 @@ COCO/annotations/instances_val2014.json
 COCO/annotations/instances_train2014.json
 COCO/annotations/person_keypoints_train2014.json
 COCO/annotations/person_keypoints_val2014.json
+COCO/annotations/captions_negcaptions_val2014.json
 COCO/val2014
 CLIP/openai_clip.py
 CLIP/clip_weights/
