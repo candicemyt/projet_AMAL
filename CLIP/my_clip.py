@@ -50,10 +50,9 @@ class AttentionBlock(nn.Module):
         return self.attention_layer(x, self.mask)
 
     def forward(self, x):
-        x_att = self.attention(x)
-        x_norm1 = self.norm1(x_att + x)
-        x_ff = self.mlp(x_norm1)
-        return self.norm2(x_ff + x_norm1)
+        x = x + self.attention(self.norm1(x))
+        x = x + self.mlp(self.norm2(x))
+        return x
 
 
 class Transformer(nn.Module):
