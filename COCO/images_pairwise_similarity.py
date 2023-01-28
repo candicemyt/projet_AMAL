@@ -31,9 +31,10 @@ def compute_pairwise_sim(dataloader, file_writer, model, device):
             image_ids = (data[0]).to(device)
             images = (data[1]).to(device)
             ids = torch.cat((ids, image_ids))
-	    if i == 0:
-		encoded_images = model.encode_image(images)
-            encoded_images = torch.cat((encoded_images, model.encode_image(images)))
+            if i == 0:
+                encoded_images = model.encode_image(images)
+            else:
+                encoded_images = torch.cat((encoded_images, model.encode_image(images)))
 
         print("Boucle de calcul de similarité")
         for i, image1_features in tqdm(enumerate(encoded_images)):
