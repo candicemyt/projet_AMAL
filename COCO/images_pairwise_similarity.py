@@ -21,16 +21,18 @@ class COCODatasetImSim(CocoDetection):
         return id, image
 
 
-def compute_pairwise_sim(dataloader, file_writer, model):
-    ids = torch.Tensor([])
-    encoded_images = torch.Tensor([])
+def compute_pairwise_sim(dataloader, file_writer, model, device):
+    ids = torch.tensor([], device=device)
+    #encoded_images = torch.tensor([], device=device)
 
     with torch.no_grad():
         print("Boucle d'encoding")
         for i, data in tqdm(enumerate(dataloader)):
-            image_ids = data[0]
-            images = data[1]
+            image_ids = (data[0]).to(device)
+            images = (data[1]).to(device)
             ids = torch.cat((ids, image_ids))
+	    if i == 0:
+		encoded_images = model.encode_image(images)
             encoded_images = torch.cat((encoded_images, model.encode_image(images)))
 
         print("Boucle de calcul de similarité")
@@ -38,7 +40,7 @@ def compute_pairwise_sim(dataloader, file_writer, model):
             similarities = []
             image_id = ids[i]
             for j, image2_features in enumerate(encoded_images):
-                similarities.append(image2_features.cpu().numpy() @ image1_features.cpu().numpy().T)
+                similarities.append(image2_features @ image1_features.T)
             index_sim_sorted = torch.argsort(torch.Tensor(np.array(similarities)).squeeze(), descending=True)
             ids_sorted = ids[index_sim_sorted]
             if ids_sorted[0] == image_id:
@@ -64,9 +66,9 @@ if __name__ == '__main__':
 
     # loading model
     model, preprocess = clip.load("ViT-B/32", device=device)
-
+    model = model.to(device)
     coco_dts = COCODatasetImSim(root='val2014/',
                                 annFile='annotations/captions_val2014.json',
                                 transform=preprocess)
-    coco_loader = DataLoader(coco_dts, batch_size=64)
-    compute_pairwise_sim(coco_loader, writer, model)
+    coco_loader = DataLoader(coco_dts, batch_size=8)
+    compute_pairwise_sim(coco_loader, writer, model, device)
