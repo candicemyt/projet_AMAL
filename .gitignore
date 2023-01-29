@@ -9,6 +9,7 @@ CLIP/__pycache__/
 CLIP/dev.ipynb
 NegCLIP/__pycache__/
 NegCLIP/runs/
+NegCLIP/weights/
 COCO/annotations/instances_val2014.json
 COCO/annotations/instances_train2014.json
 COCO/annotations/person_keypoints_train2014.json

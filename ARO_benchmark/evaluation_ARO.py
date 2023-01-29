@@ -11,7 +11,7 @@ class VGDataset(Dataset):
         self.n = n
         self.image_transform = image_tranform
         self.text_transform = text_transform
-        self.raw_data = self.read_VG_file(self.file_path, self.n)
+        self.raw_data, self.indexes = self.read_VG_file(self.file_path, self.n)
 
     def read_VG_file(self, file_path, n):
         data = []
@@ -22,36 +22,29 @@ class VGDataset(Dataset):
 
         data = np.array(data)
         if n is not None:
-            indices = np.random.randint(0, data.shape[0], size=n)
-            indices = 2*(indices//2) + 1
+            indexes = np.random.randint(0, data.shape[0], size=n)
+            indexes = 2 * (indexes // 2) + 1  # odd indexes = true caption
         else:
-            indices = np.arange(0,  data.shape[0], step=2)
-
-        return data[indices]
+            indexes = np.arange(0, data.shape[0], step=2)  # odd indexes = true caption
+        return data, indexes
 
     def _load_image(self, image_id):
-        image = Image.open(self.image_root+'/'+image_id+'.jpg')
+        image = Image.open(self.image_root + '/' + image_id + '.jpg')
         if self.image_transform is not None:
             image = self.image_transform(image)
         return image
 
-    def _load_text(self, t1, t2):
-        if self.text_transform is not None:
-            text = torch.cat((self.text_transform(t1), self.text_transform(t2)))
-        else:
-            text = torch.cat((t1, t2))
-        return text
-
     def __len__(self):
-        if self.n is not None:
-            return self.n
-        else:
-            return self.raw_data.shape[0]
+        return self.indexes.shape[0]
 
     def __getitem__(self, index):
-        item = self.raw_data[index]
-        item_neg = self.raw_data[index+1]
+        id = self.indexes[index-1]
+        item = self.raw_data[id]
+        item_neg = self.raw_data[id + 1]
         image = self._load_image(item['image_id'])
-        text = self._load_text(item["caption"], item_neg["caption"])
-        return image, text
 
+        captions = [item["caption"], item_neg["caption"]]
+        if self.text_transform is not None:
+            captions = self.text_transform(captions)
+
+        return image, captions
