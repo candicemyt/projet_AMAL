@@ -16,38 +16,35 @@ class COCODatasetImSim(CocoDetection):
         id = self.ids[index]
         image = self._load_image(id)
 
-        if self.transforms is not None:
-            image, _ = self.transforms(image, "")
+        if self.transform is not None: 
+           image = self.transform(image)
         return id, image
 
 
 def compute_pairwise_sim(dataloader, file_writer, model, device):
     ids = torch.tensor([], device=device)
-    #encoded_images = torch.tensor([], device=device)
+    encoded_images = torch.tensor([], device=device)
 
     with torch.no_grad():
         print("Boucle d'encoding")
-        for i, data in tqdm(enumerate(dataloader)):
-            image_ids = (data[0]).to(device)
-            images = (data[1]).to(device)
-            ids = torch.cat((ids, image_ids))
-            if i == 0:
-                encoded_images = model.encode_image(images)
-            else:
-                encoded_images = torch.cat((encoded_images, model.encode_image(images)))
+        for i, data in tqdm(enumerate(dataloader), total=len(dataloader)):
+            image_ids, images = data
+            ids = torch.cat((ids, image_ids.to(device)))
+            encoded_images = torch.cat((encoded_images, model.encode_image(images.to(device))))
 
         print("Boucle de calcul de similarité")
-        for i, image1_features in tqdm(enumerate(encoded_images)):
-            similarities = []
+        for i, image1_features in tqdm(enumerate(encoded_images), total=encoded_images.shape[0]):
+            similarities = torch.zeros(encoded_images.shape[0], device=device)
             image_id = ids[i]
             for j, image2_features in enumerate(encoded_images):
-                similarities.append(image2_features @ image1_features.T)
-            index_sim_sorted = torch.argsort(torch.Tensor(np.array(similarities)).squeeze(), descending=True)
+                similarities[j] = image2_features @ image1_features.t()
+            index_sim_sorted = torch.argsort(similarities.squeeze(), descending=True)
             ids_sorted = ids[index_sim_sorted]
             if ids_sorted[0] == image_id:
-                file_writer.writerow([int(s) for s in ids_sorted[0:4]])
+                file_writer.writerow([int(i) for i in ids_sorted[0:4]])
             else:
-                file_writer.writerow([int(s) for s in [image_id] + [ids_sorted[0:3]]])
+                new_row = [image_id] + list(ids_sorted[0:3])
+                file_writer.writerow([int(i) for i in new_row])
 
 
 
@@ -67,9 +64,8 @@ if __name__ == '__main__':
 
     # loading model
     model, preprocess = clip.load("ViT-B/32", device=device)
-    model = model.to(device)
     coco_dts = COCODatasetImSim(root='val2014/',
                                 annFile='annotations/captions_val2014.json',
                                 transform=preprocess)
-    coco_loader = DataLoader(coco_dts, batch_size=8)
+    coco_loader = DataLoader(coco_dts, batch_size=128)
     compute_pairwise_sim(coco_loader, writer, model, device)
