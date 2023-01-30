@@ -3,6 +3,8 @@ from torchvision import transforms, utils
 import json
 import torch
 from torchvision.datasets import CocoDetection
+from PIL import Image
+import os
 
 # TODO : ignore strong alt for CLIP-FT
 # TODO : check if it works with negcaptions
@@ -34,6 +36,10 @@ class COCODataset(CocoDetection):
         # dictionnary with key : image index, value : list of id of 3 nearest neighbors of each image
         self.nearest_neighbors = nearest_neighbors
 
+    # def _load_image(self, id: int):
+    #     path = self.coco.loadImgs(id)[0]["file_name"]
+    #     return Image.open(os.path.join(self.root, path))
+
     def _load_target(self, id: int):
         anns = super()._load_target(id)
         captions = []
@@ -41,30 +47,34 @@ class COCODataset(CocoDetection):
         for ann in anns:
             captions.append(ann["caption"])
             neg_captions.append(ann["neg_captions"])
-        return captions, neg_captions
+        caption_id = torch.randint(0, len(captions), (1,))
+        return captions[caption_id], neg_captions[caption_id]
 
     def __getitem__(self, index: int):
         id = self.ids[index]
         image = self._load_image(id)
-        pos_captions, neg_captions = self._load_target(id)
+        pos_caption, neg_captions = self._load_target(id)
 
         # choose one strong alternative image (and its respective captions) between the k=3 nearest neighbors
         rd_image_neighbor = torch.randint(0, 3, (1,))
         strong_alt_id = self.nearest_neighbors[id][rd_image_neighbor]  # id in root directory
         strong_alt_image = self._load_image(strong_alt_id)
-        strong_alt_captions, neg_strong_alt_captions = self._load_target(strong_alt_id)
+        strong_alt_caption, neg_strong_alt_captions = self._load_target(strong_alt_id)
 
         # choose only one negative caption for each positive caption
-        neg_captions = choose_neg_caption_per_caption(neg_captions)
-        neg_strong_alt_captions = choose_neg_caption_per_caption(neg_strong_alt_captions)
+        neg_caption = neg_captions[torch.randint(0, len(neg_captions), (1,))]
+        neg_strong_alt_caption = neg_strong_alt_captions[torch.randint(0, len(neg_strong_alt_captions), (1,))]
 
         # transforming the data
-        image = self.transform(image)
-        strong_alt_image = self.transform(strong_alt_image)
-        pos_captions = self.target_transform(pos_captions)
-        neg_captions = self.target_transform(neg_captions)
-        strong_alt_captions = self.target_transform(strong_alt_captions)
-        neg_strong_alt_captions = self.target_transform(neg_strong_alt_captions)
+        image = self.transform(image).unsqueeze(0)
+        strong_alt_image = self.transform(strong_alt_image).unsqueeze(0)
+        pos_caption = self.target_transform(pos_caption)
+        neg_caption = self.target_transform(neg_caption)
+        strong_alt_caption = self.target_transform(strong_alt_caption)
+        neg_strong_alt_caption = self.target_transform(neg_strong_alt_caption)
 
+        captions = torch.cat((pos_caption, strong_alt_caption, neg_caption, neg_strong_alt_caption))
+        images = torch.cat((image, strong_alt_image))
 
-        return image, pos_captions, neg_captions, strong_alt_image, strong_alt_captions, neg_strong_alt_captions
+        return images, captions
+
