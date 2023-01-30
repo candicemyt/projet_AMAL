@@ -119,5 +119,3 @@ def generate_dataset(set_type):
     dataset_attributes_file.close()
 
 generate_dataset("train")
-print("nb rel ", len(RELATIONS))
-print("nb att ", len(ATTRIBUTES))
