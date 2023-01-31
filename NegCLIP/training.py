@@ -38,6 +38,7 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
 
     for epoch in tqdm(range(max_epochs)):
         # TRAIN
+        model.train()
         for i, data in enumerate(train_loader):
             optimizer.zero_grad()
 
@@ -75,40 +76,43 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
             writer.add_scalar("evaluate/VGA/train", acc_vga / len(vga_loader), step)
 
             # save weights
-            torch.save(model.state_dict(), f"weights/epoch{epoch}_step{step}.pth")
+            if i % len(train_loader)/10 == 0:
+                torch.save(model.state_dict(), f"weights/epoch{epoch}_step{step}.pth")
 
         # VAL
-        for i, data in enumerate(val_loader):
+        model.eval()
+        with torch.no_grad():
+            for i, data in enumerate(val_loader):
 
-            images, captions = data
-            images = images.to(device)
-            captions = captions.to(device)
-            captions_pos = captions[:, 0:2, :].flatten(0, 1)
-            captions_neg = captions[:, 2:, :].flatten(0, 1)
-            images = images.flatten(0, 1)
+                images, captions = data
+                images = images.to(device)
+                captions = captions.to(device)
+                captions_pos = captions[:, 0:2, :].flatten(0, 1)
+                captions_neg = captions[:, 2:, :].flatten(0, 1)
+                images = images.flatten(0, 1)
 
-            # encoding + cosine similarity as logits
-            logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            logits_per_image = logits_per_image[:, 2 * BATCH_SIZE:]  # keeping only the true captions to compute loss
-            logits_per_text = logits_per_image.t()
+                # encoding + cosine similarity as logits
+                logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
+                logits_per_image = logits_per_image[:, 2 * BATCH_SIZE:]  # keeping only true captions to compute loss
+                logits_per_text = logits_per_image.t()
 
-            # loss
-            labels = torch.arange(2 * BATCH_SIZE)
-            loss_text = cross_entropy(logits_per_text, labels)
-            loss_image = cross_entropy(logits_per_image, labels)
-            loss = (loss_text + loss_image) / 2
+                # loss
+                labels = torch.arange(2 * BATCH_SIZE)
+                loss_text = cross_entropy(logits_per_text, labels)
+                loss_image = cross_entropy(logits_per_image, labels)
+                loss = (loss_text + loss_image) / 2
 
-            # evaluate on ARO
-            acc_vgr = evaluate(vgr_loader, model, device)
-            acc_vga = evaluate(vga_loader, model, device)
+                # evaluate on ARO
+                acc_vgr = evaluate(vgr_loader, model, device)
+                acc_vga = evaluate(vga_loader, model, device)
 
-            # logs
-            step = epoch * len(val_loader) + i
-            writer.add_scalar("loss/val", loss.item(), step)
-            writer.add_scalar("loss/image/val", loss_image.item(), step)
-            writer.add_scalar("loss/text/val", loss_text.item(), step)
-            writer.add_scalar("evaluate/VGR/val", acc_vgr / len(vgr_loader), step)
-            writer.add_scalar("evaluate/VGA/val", acc_vga / len(vga_loader), step)
+                # logs
+                step = epoch * len(val_loader) + i
+                writer.add_scalar("loss/val", loss.item(), step)
+                writer.add_scalar("loss/image/val", loss_image.item(), step)
+                writer.add_scalar("loss/text/val", loss_text.item(), step)
+                writer.add_scalar("evaluate/VGR/val", acc_vgr / len(vgr_loader), step)
+                writer.add_scalar("evaluate/VGA/val", acc_vga / len(vga_loader), step)
 
 
 if __name__ == "__main__":
@@ -122,6 +126,7 @@ if __name__ == "__main__":
     SHUFFLE_DTS = False
     LR = 1e-5  # TODO : to check
     VGA_VGR_PATH = "../ARO_benchmark/VGA_VGR/"
+    NB_TESTCASES = 1000
 
     # load pretrain model
     model, preprocess = clip.load("ViT-B/32", device=DEVICE)
@@ -146,11 +151,11 @@ if __name__ == "__main__":
 
     # setup dataloader for evaluation
     vgr_dts = VGDataset(VGA_VGR_PATH + f"/train/dataset_relations.csv", VGA_VGR_PATH + "images",
-                        20, image_tranform=preprocess, text_transform=clip.tokenize)
+                        NB_TESTCASES, image_tranform=preprocess, text_transform=clip.tokenize)
     vgr_loader = DataLoader(vgr_dts)
 
     vga_dts = VGDataset(VGA_VGR_PATH + f"/train/dataset_attributes.csv", VGA_VGR_PATH + "images",
-                        20, image_tranform=preprocess, text_transform=clip.tokenize)
+                        NB_TESTCASES, image_tranform=preprocess, text_transform=clip.tokenize)
     vga_loader = DataLoader(vga_dts)
 
     # optimizer
