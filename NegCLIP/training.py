@@ -9,13 +9,12 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.nn.functional import cross_entropy
 from torch.utils.tensorboard import SummaryWriter
-from ARO_benchmark.evaluation_ARO import VGDataset
+from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset
 
-# TODO : evaluate on COCO-order
 
 def evaluate(dataloader, model, device):
     """
-    Evaluate model on the sataset in the dataloader
+    Evaluate model on the dataset in the dataloader
     :param dataloader: pytorch dataloader
     :param model : model to evaluate
     :param device : cuda or cpu
@@ -28,12 +27,13 @@ def evaluate(dataloader, model, device):
         image = image.to(device)
         logits_per_image, logits_per_text = model(image, captions)
         probs = logits_per_image.softmax(dim=-1).squeeze()
-        if probs[0] > probs[1]:
+        if max(probs) == probs[0]:
             acc += 1
     return acc / len(dataloader)
 
 
-def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, vga_loader, max_epochs, device):
+def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, vga_loader, coco_order_loader,
+             max_epochs, device):
     writer = SummaryWriter()
 
     for epoch in tqdm(range(max_epochs)):
@@ -51,7 +51,7 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
 
             # encoding + cosine similarity as logits
             logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            logits_per_image = logits_per_image[:, 2 * BATCH_SIZE:]  # keeping only the true captions to compute loss
+            logits_per_image = logits_per_image[:, :2 * BATCH_SIZE]  # keeping only the true captions to compute loss
             logits_per_text = logits_per_image.t()
 
             # loss
@@ -66,24 +66,25 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
             # evaluate on ARO
             acc_vgr = evaluate(vgr_loader, model, device)
             acc_vga = evaluate(vga_loader, model, device)
+            acc_coco_order = evaluate(coco_order_loader, model, device)
 
             # logs
             step = epoch * len(train_loader) + i
             writer.add_scalar("loss/train", loss.item(), step)
             writer.add_scalar("loss/image/train", loss_image.item(), step)
             writer.add_scalar("loss/text/train", loss_text.item(), step)
-            writer.add_scalar("evaluate/VGR/train", acc_vgr / len(vgr_loader), step)
-            writer.add_scalar("evaluate/VGA/train", acc_vga / len(vga_loader), step)
+            writer.add_scalar("evaluate/VGR/train", acc_vgr, step)
+            writer.add_scalar("evaluate/VGA/train", acc_vga, step)
+            writer.add_scalar("evaluate/COCO_order/train", acc_coco_order, step)
 
             # save weights
-            if i % len(train_loader)/10 == 0:
+            if i % len(train_loader) / 10 == 0:
                 torch.save(model.state_dict(), f"weights/epoch{epoch}_step{step}.pth")
 
         # VAL
         model.eval()
         with torch.no_grad():
             for i, data in enumerate(val_loader):
-
                 images, captions = data
                 images = images.to(device)
                 captions = captions.to(device)
@@ -105,28 +106,31 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
                 # evaluate on ARO
                 acc_vgr = evaluate(vgr_loader, model, device)
                 acc_vga = evaluate(vga_loader, model, device)
+                acc_coco_order = evaluate(coco_order_loader, model, device)
 
                 # logs
                 step = epoch * len(val_loader) + i
                 writer.add_scalar("loss/val", loss.item(), step)
                 writer.add_scalar("loss/image/val", loss_image.item(), step)
                 writer.add_scalar("loss/text/val", loss_text.item(), step)
-                writer.add_scalar("evaluate/VGR/val", acc_vgr / len(vgr_loader), step)
-                writer.add_scalar("evaluate/VGA/val", acc_vga / len(vga_loader), step)
+                writer.add_scalar("evaluate/VGR/val", acc_vgr, step)
+                writer.add_scalar("evaluate/VGA/val", acc_vga, step)
+                writer.add_scalar("evaluate/COCO_order/val", acc_coco_order, step)
 
 
 if __name__ == "__main__":
     # hyper params
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     SET_TYPE = "val"
-    BATCH_SIZE = 2
+    BATCH_SIZE = 1024
     MAX_EPOCHS = 5
     WARMUP_STEPS = 50
     VALSET_SIZE = 0.15
     SHUFFLE_DTS = False
-    LR = 1e-5  # TODO : to check
+    LR = 5e-6  # picked one of the three proposed : {1e − 5, 5e − 6, 1e − 6}
     VGA_VGR_PATH = "../ARO_benchmark/VGA_VGR/"
-    NB_TESTCASES = 1000
+    COCO_ORDER_PATH = "../ARO_benchmark/COCO_Order/captions_negcaptions.json"
+    NB_TESTCASES = 50
 
     # load pretrain model
     model, preprocess = clip.load("ViT-B/32", device=DEVICE)
@@ -150,16 +154,22 @@ if __name__ == "__main__":
     val_loader = torch.utils.data.DataLoader(coco_dts, batch_size=BATCH_SIZE, sampler=val_sampler)
 
     # setup dataloader for evaluation
-    vgr_dts = VGDataset(VGA_VGR_PATH + f"/train/dataset_relations.csv", VGA_VGR_PATH + "images",
+    vgr_dts = VGDataset(VGA_VGR_PATH + f"/{SET_TYPE}/dataset_relations.csv", VGA_VGR_PATH + "images",
                         NB_TESTCASES, image_tranform=preprocess, text_transform=clip.tokenize)
     vgr_loader = DataLoader(vgr_dts)
 
-    vga_dts = VGDataset(VGA_VGR_PATH + f"/train/dataset_attributes.csv", VGA_VGR_PATH + "images",
+    vga_dts = VGDataset(VGA_VGR_PATH + f"/{SET_TYPE}/dataset_attributes.csv", VGA_VGR_PATH + "images",
                         NB_TESTCASES, image_tranform=preprocess, text_transform=clip.tokenize)
     vga_loader = DataLoader(vga_dts)
+
+    coco_order_dts = COCOOrderDataset(COCO_ORDER_PATH, f'../COCO/{SET_TYPE}2014/COCO_{SET_TYPE}2014_', SET_TYPE,
+                                      NB_TESTCASES, image_tranform=preprocess, text_transform=clip.tokenize)
+    coco_order_loader = DataLoader(coco_order_dts)
 
     # optimizer
     optim = AdamW(model.parameters(), lr=LR)
     scheduler = CosineAnnealingWarmRestarts(optim, WARMUP_STEPS)
 
-    training(model, optim, scheduler, train_loader, val_loader, vgr_loader, vga_loader, MAX_EPOCHS, DEVICE)
+    training(model, optim, scheduler, train_loader, val_loader,
+             vgr_loader, vga_loader, coco_order_loader,
+             MAX_EPOCHS, DEVICE)
