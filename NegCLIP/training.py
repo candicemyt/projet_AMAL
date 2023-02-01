@@ -1,3 +1,9 @@
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
 from COCO_Dataset import COCODataset
 from torch.utils.data import DataLoader
 import clip
@@ -8,8 +14,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.nn.functional import cross_entropy
-from torch.utils.tensorboard import SummaryWriter
 from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset
+from torch.utils.tensorboard import SummaryWriter
+
 
 
 def evaluate(dataloader, model, device):
@@ -63,6 +70,11 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
             optimizer.step()
             scheduler.step()
 
+            #Clip the logit scale to increase stability as suggested in CLIP original paper
+            with torch.no_grad():
+                model.logit_scale.clamp_(0, np.log(100))
+
+
             # evaluate on ARO
             acc_vgr = evaluate(vgr_loader, model, device)
             acc_vga = evaluate(vga_loader, model, device)
@@ -96,11 +108,14 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
                 logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
                 logits_per_image = logits_per_image[:, 2 * BATCH_SIZE:]  # keeping only true captions to compute loss
                 logits_per_text = logits_per_image.t()
+                print("logits per image: ",logits_per_image)
 
                 # loss
                 labels = torch.arange(2 * BATCH_SIZE)
                 loss_text = cross_entropy(logits_per_text, labels)
+                print("loss text: ", loss_text)
                 loss_image = cross_entropy(logits_per_image, labels)
+                print("loss image: ", loss_image)
                 loss = (loss_text + loss_image) / 2
 
                 # evaluate on ARO
@@ -122,7 +137,7 @@ if __name__ == "__main__":
     # hyper params
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     SET_TYPE = "val"
-    BATCH_SIZE = 1024
+    BATCH_SIZE = 2
     MAX_EPOCHS = 5
     WARMUP_STEPS = 50
     VALSET_SIZE = 0.15
