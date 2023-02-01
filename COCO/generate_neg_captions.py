@@ -71,7 +71,6 @@ def generate_neg_captions(set_type):
             processed_captions_list.append(caption_data)
 
     # write files
-
     data["annotations"] = processed_captions_list
     with open(f"annotations/captions_negcaptions_{set_type}2014.json", 'w') as f:
         json.dump(data, f)

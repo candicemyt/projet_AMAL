@@ -7,7 +7,6 @@ from PIL import Image
 import os
 
 # TODO : ignore strong alt for CLIP-FT
-# TODO : check if it works with negcaptions
 
 def choose_neg_caption_per_caption(all_neg_captions):
     """
@@ -36,9 +35,6 @@ class COCODataset(CocoDetection):
         # dictionnary with key : image index, value : list of id of 3 nearest neighbors of each image
         self.nearest_neighbors = nearest_neighbors
 
-    # def _load_image(self, id: int):
-    #     path = self.coco.loadImgs(id)[0]["file_name"]
-    #     return Image.open(os.path.join(self.root, path))
 
     def _load_target(self, id: int):
         anns = super()._load_target(id)
