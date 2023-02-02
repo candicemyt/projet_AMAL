@@ -1,53 +1,85 @@
 import torch 
 from torch import nn
 import torch.nn.functional as F
+from torch.nn.modules.activation import NonDynamicallyQuantizableLinear
 import numpy as np
 
 
 class Attentionlayer(nn.Module):
-    def __init__(self, embedding_size, num_heads) -> None:
+    def __init__(self, embedding_size, num_heads, bias=True, dropout_p=0.) -> None:
         super().__init__()
-        self.key = nn.Linear(embedding_size, embedding_size*num_heads)
-        self.query = nn.Linear(embedding_size, embedding_size*num_heads)
-        self.value = nn.Linear(embedding_size, embedding_size*num_heads)
-    
-        self.feed_forward = nn.Linear(embedding_size*num_heads, embedding_size)
-        
         self.num_heads = num_heads
         self.embedding_size = embedding_size
 
-    def forward(self, x, mask):
-        q = self.query(x) #b grid**2 embedding_size*num_heads
-        k = self.key(x)
-        v = self.value(x)
-        i = q @ k.transpose(1,2)
+        self.in_linear = nn.Linear(embedding_size, embedding_size*3, bias=bias)
+        #self.out_linear = nn.Linear(embedding_size, embedding_size, bias=bias)
+        self.out_linear = NonDynamicallyQuantizableLinear(embedding_size, embedding_size, bias=bias)
 
+        self.dropout = nn.Dropout(p=dropout_p)
+
+    def forward(self, q, k, v,  mask):
+        l, b, d = q.shape #length, batch size, embedding dim
+        head_dim = d // self.num_heads
+        assert head_dim * self.num_heads == self.embedding_size, "embedding_size must be divisible by num_heads"
+        
+        if q.equal(k) and k.equal(v):
+            #in projection (to get q, k, v):
+            q, k, v = self.in_linear(q).chunk(3, dim=-1)  
+        else:
+            assert False, "Different Query Key Value not implemented"
+
+        #in openai clip no k bias or v bias were added
+
+        #Rearrange q,k,v d/num_head
+        q = q.contiguous().view(l, b * self.num_heads, head_dim).transpose(0,1)
+        if k is not None:
+            k = k.contiguous().view(-1, b * self.num_heads, head_dim).transpose(0,1)
+        if v is not None:
+            v = v.contiguous().view(-1, b * self.num_heads, head_dim).transpose(0,1)
+        
+
+        q = q * float(head_dim) ** -0.5
+        #in openai clip no zero attention padding
+        
         if mask is not None:
-            z = torch.bmm(F.softmax(i+mask, dim=-1),v) / (self.embedding_size ** .25) # as suggested in Transformers from scratch
-        else: 
-            z = torch.bmm(F.softmax(i, dim=-1), v) / (self.embedding_size ** .25) # as suggested in Transformers from scratch
+            z = torch.bmm(q, k.transpose(1,2)) + mask
+        else:
+            z = torch.bmm(q, k.transpose(1,2))
+        z = F.softmax(z, dim=-1)
 
-        return self.feed_forward(z)
+        #Dropout
+        #z = self.dropout(z)
+
+        z = torch.bmm(z,v)
+        z = z.transpose(0, 1).contiguous().view(l, b, self.embedding_size) #as in pytorch
+        z = self.out_linear(z)
+
+        return z
+
+class QuickGELU(nn.Module):
+    def forward(self, x: torch.Tensor):
+        return x * torch.sigmoid(1.702 * x)
 
 
 class AttentionBlock(nn.Module):
     def __init__(self, embedding_size, num_heads, mask=None) -> None:
         super().__init__()
-        self.attention_layer = Attentionlayer(embedding_size, num_heads)
+        self.attention_layer = Attentionlayer(embedding_size=embedding_size, num_heads=num_heads)#nn.MultiheadAttention(embed_dim=embedding_size, num_heads=num_heads)
 
         self.norm1 = nn.LayerNorm(embedding_size)
-        self.norm2 = nn.LayerNorm(embedding_size)
-
+        
         self.mlp = nn.Sequential(
             nn.Linear(embedding_size, embedding_size * 4),
-            nn.ReLU(), #maybe GeLU
+            QuickGELU(),
             nn.Linear(embedding_size * 4, embedding_size)
         )
+        self.norm2 = nn.LayerNorm(embedding_size)
 
         self.mask = mask
 
     def attention(self, x):
-        return self.attention_layer(x, self.mask)
+        self.mask = self.mask.to(dtype=x.dtype, device=x.device) if self.mask is not None else None
+        return self.attention_layer(x, x, x, mask=self.mask)[0]
 
     def forward(self, x):
         x = x + self.attention(self.norm1(x))
@@ -63,10 +95,10 @@ class Transformer(nn.Module):
         self.num_heads = num_heads
         self.seq_length = seq_length
 
+        self.mask = self.build_mask() if use_mask else None
+
         self.positional_encoding = nn.Parameter(torch.empty(seq_length, embedding_size))
         self.token_embedding = nn.Embedding(vocab_size, embedding_size, padding_idx=0)
-
-        self.mask = self.build_mask() if use_mask else None
 
         # create list of attention block
         attention_blocks = []
@@ -85,15 +117,19 @@ class Transformer(nn.Module):
 
         return mask
         
-    def forward(self, x):
-        #loop over the attention blocks
-        x = self.token_embedding(x).swapaxes(0,1)
-        x = x + self.positional_encoding
+    def forward(self, text):
+        x = self.token_embedding(text).type(self.dtype)  # [batch_size, n_ctx, d_model]
+
+        x = x + self.positional_embedding.type(self.dtype)
+        x = x.permute(1, 0, 2) 
         x = self.attention_blocks(x)
-        #linear + softmax
-        x = self.linear(x.swapaxes(1,2)).squeeze(-1)
+        x = x.permute(1, 0, 2)
         x = self.norm(x)
-        return x @ self.proj
+
+        # take features from the eot embedding (eot_token is the highest number in each sequence)
+        x = x[torch.arange(x.shape[0]), text.argmax(dim=-1)] @ self.text_projection
+
+        return x
 
 
 class VisionTransformer(nn.Module):
@@ -106,21 +142,21 @@ class VisionTransformer(nn.Module):
         self.n_blocks = n_blocks
         self.num_heads = num_heads
         scale = embedding_size ** -0.5
+        self.mask = self.build_mask() if use_mask else None
 
         self.positional_encoding = nn.Parameter(scale * torch.randn((input_resolution // kernel_size) ** 2 + 1, embedding_size))
         self.cls = nn.Parameter(scale * torch.randn(embedding_size))
 
         self.convolution = nn.Conv2d(in_channels=3, out_channels=embedding_size, kernel_size = kernel_size, stride=stride, bias=False)
 
-        self.mask = self.build_mask() if use_mask else None
-
-         # create list of attention block
+        # create list of attention block
         attention_blocks = []
         for i in range(n_blocks):
             attention_blocks.append(AttentionBlock(embedding_size=embedding_size, num_heads=num_heads, mask=self.mask))
         self.attention_blocks = nn.Sequential(*attention_blocks)
         
-        self.norm = nn.LayerNorm(embedding_size)
+        self.norm1 = nn.LayerNorm(embedding_size)
+        self.norm2 = nn.LayerNorm(embedding_size)
         self.proj = nn.Parameter(scale * torch.randn(embedding_size, output_dim))    
 
     def build_mask(self):
@@ -137,8 +173,12 @@ class VisionTransformer(nn.Module):
         cls = self.cls + torch.zeros(b, 1, w) # b 1 w
         x = torch.cat((cls,x), dim=1) # b (input_res/kernel_size) **2 + 1 w
         x = x + self.positional_encoding
+        x = self.norm1(x)
+        x = x.permute(1, 0, 2)
         x = self.attention_blocks(x)
-        x = self.norm(x[:, 0, :])
+        print(x[0][0][:3])
+        x = x.permute(1, 0, 2)
+        x = self.norm2(x[:, 0, :])
 
         return x @ self.proj
 
