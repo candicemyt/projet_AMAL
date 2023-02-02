@@ -17,3 +17,4 @@ CLIP/openai_clip.py
 CLIP/clip_weights/
 CLIP/dev.py
 COCO_ORDER/
+GQA_raw/

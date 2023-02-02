@@ -118,4 +118,4 @@ def generate_dataset(set_type):
     dataset_relations_file.close()
     dataset_attributes_file.close()
 
-generate_dataset("train")
+generate_dataset("val")

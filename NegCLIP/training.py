@@ -46,25 +46,90 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
     for epoch in tqdm(range(max_epochs)):
         # TRAIN
         model.train()
-        for i, data in enumerate(train_loader):
+        for i, data in tqdm(enumerate(train_loader), leave=False, total=len(train_loader)):
             optimizer.zero_grad()
 
             images, captions = data
+            b, s, c, h, w = images.shape #batch_size, image+strong altenative, channels, height, width
             images = images.to(device)
             captions = captions.to(device)
             captions_pos = captions[:, 0:2, :].flatten(0, 1)
             captions_neg = captions[:, 2:, :].flatten(0, 1)
-            images = images.flatten(0, 1)
+            images = images.flatten(0, 1) # BSCHW -> (B*S)CHW
 
-            # encoding + cosine similarity as logits
-            logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            logits_per_image = logits_per_image[:,:2 * BATCH_SIZE]  # keeping only the true captions to compute loss
+
+            ##### -- DEBUGGING FORWARD -- #####
+
+            encoded_image = model.encode_image(images)
+            encoded_text = model.encode_text(torch.cat((captions_pos, captions_neg)))
+
+            if torch.isnan(encoded_image).any():
+                print("image encoded: ",encoded_image)
+                print("\n text encoded: ", encoded_text)
+                assert False
+            
+            if torch.isnan(encoded_text).any():
+                print("image encoded: ",encoded_image)
+                print("\n text encoded: ", encoded_text)
+                assert False
+
+            #this part is completely from openAI
+            # normalized features
+            encoded_image = encoded_image / encoded_image.norm(dim=1, keepdim=True)
+            encoded_text = encoded_text / encoded_text.norm(dim=1, keepdim=True)
+
+            if torch.isnan(encoded_image).any():
+                print("after normalization")
+                print("image encoded: ",encoded_image)
+                print("\n text encoded: ", encoded_text)
+                assert False
+            
+            if torch.isnan(encoded_text).any():
+                print("after normalization")
+                print("image encoded: ",encoded_image)
+                print("\n text encoded: ", encoded_text)
+                assert False
+
+            # cosine similarity as logits
+            logit_scale = model.logit_scale.exp()
+
+            if torch.isnan(logit_scale).any():
+                print("logits scale: ", logit_scale)
+                assert False
+        
+            logits_per_image = logit_scale * encoded_image @ encoded_text.t()
+            logits_per_image = logits_per_image[:,:2 * b]
             logits_per_text = logits_per_image.t()
 
+            if torch.isnan(logits_per_image).any():
+                print("logits_per_image: ", logits_per_image)
+                print("logits_scale: ", logit_scale)
+
+                assert False
+
+
+            ###################################
+
+            #following code to uncomment after debugging
+
+            # encoding + cosine similarity as logits
+            # logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
+            # logits_per_image = logits_per_image[:,:2 * BATCH_SIZE]  # keeping only the true captions to compute loss
+            # logits_per_text = logits_per_image.t()
+
             # loss
-            labels = torch.arange(2 * BATCH_SIZE).to(device)
+            labels = torch.arange(2 * b).to(device)
+
             loss_text = cross_entropy(logits_per_text, labels)
             loss_image = cross_entropy(logits_per_image, labels)
+
+            if torch.isnan(loss_text).any() or torch.isnan(loss_image):
+                print("logits_per_text: ", logits_per_text)
+                print("logits_per_image: ", logits_per_image)
+                print("logits scale: ", logit_scale)
+                print("labels: ", labels)
+                assert False
+
             loss = (loss_text + loss_image) / 2
             loss.backward()
             optimizer.step()
@@ -98,6 +163,7 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
         with torch.no_grad():
             for i, data in enumerate(val_loader):
                 images, captions = data
+                b, _, c, h, w = images.shape
                 images = images.to(device)
                 captions = captions.to(device)
                 captions_pos = captions[:, 0:2, :].flatten(0, 1)
@@ -106,12 +172,12 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
 
                 # encoding + cosine similarity as logits
                 logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-                logits_per_image = logits_per_image[:,:2 * BATCH_SIZE]  # keeping only true captions to compute loss
+                logits_per_image = logits_per_image[:,:2 * b]  # keeping only true captions to compute loss
                 logits_per_text = logits_per_image.t()
                 print("logits per image: ",logits_per_image)
 
                 # loss
-                labels = torch.arange(2 * BATCH_SIZE).to(device)
+                labels = torch.arange(2 * b).to(device)
                 loss_text = cross_entropy(logits_per_text, labels)
                 print("loss text: ", loss_text)
                 loss_image = cross_entropy(logits_per_image, labels)
@@ -137,7 +203,7 @@ if __name__ == "__main__":
     # hyper params
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     SET_TYPE = "val"
-    BATCH_SIZE = 32
+    BATCH_SIZE = 4
     MAX_EPOCHS = 5
     WARMUP_STEPS = 50
     VALSET_SIZE = 0.15
