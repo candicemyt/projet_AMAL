@@ -119,7 +119,7 @@ if __name__ == "__main__":
     # hyper params
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     SET_TYPE = "val"
-    BATCH_SIZE = 32
+    BATCH_SIZE = 20
     MAX_EPOCHS = 5
     WARMUP_STEPS = 50
     VALSET_SIZE = 0.15

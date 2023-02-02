@@ -31,8 +31,11 @@ if __name__ == "__main__":
 
     # evaluation
     acc_vgr = evaluate(vgr_loader, clip_model, DEVICE)
+    print(acc_vgr)
     acc_vga = evaluate(vga_loader, clip_model, DEVICE)
+    print(acc_vga)
     acc_coco_ord = evaluate(coco_order_loader, clip_model, DEVICE)
+    print(acc_coco_ord)
 
     # save results
     print(acc_vgr)
@@ -48,4 +51,3 @@ if __name__ == "__main__":
     res_clip_file.write("vgr : " + str(acc_vgr))
     res_clip_file.write("vga : " + str(acc_vga))
     res_clip_file.write("coco-order : " + str(acc_coco_ord))
-
