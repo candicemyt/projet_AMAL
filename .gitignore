@@ -18,3 +18,4 @@ CLIP/clip_weights/
 CLIP/dev.py
 COCO_ORDER/
 GQA_raw/
+CLIP/func_attention.py

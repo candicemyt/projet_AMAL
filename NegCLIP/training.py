@@ -1,9 +1,5 @@
 import sys
 import os
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-
 from COCO_Dataset import COCODataset
 from torch.utils.data import DataLoader
 import clip
@@ -14,8 +10,10 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.nn.functional import cross_entropy
-from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 from torch.utils.tensorboard import SummaryWriter
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 
 
 def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, vga_loader, coco_order_loader,
@@ -25,20 +23,21 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
     for epoch in tqdm(range(max_epochs)):
         # TRAIN
         model.train()
+
         for i, data in tqdm(enumerate(train_loader), leave=False, total=len(train_loader)):
             optimizer.zero_grad()
 
             images, captions = data
-            b, s, c, h, w = images.shape #batch_size, image+strong altenative, channels, height, width
+            b, s, c, h, w = images.shape  # batch_size, image+strong altenative, channels, height, width
             images = images.to(device)
             captions = captions.to(device)
             captions_pos = captions[:, 0:2, :].flatten(0, 1)
             captions_neg = captions[:, 2:, :].flatten(0, 1)
-            images = images.flatten(0, 1) # BSCHW -> (B*S)CHW
+            images = images.flatten(0, 1)  # BSCHW -> (B*S)CHW
 
             # encoding + cosine similarity as logits
             logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            logits_per_image = logits_per_image[:,:2 * BATCH_SIZE]  # keeping only the true captions to compute loss
+            logits_per_image = logits_per_image[:, :2 * b]  # keeping only the true captions to compute loss
             logits_per_text = logits_per_image.t()
 
             # loss
@@ -71,7 +70,7 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
             writer.add_scalar("evaluate/COCO_order/train", acc_coco_order, step)
 
             # save weights
-            if i % len(train_loader) / 10 == 0:
+            if i % (len(train_loader) / 10) == 0:
                 torch.save(model.state_dict(), f"weights/epoch{epoch}_step{step}.pth")
 
         # VAL
