@@ -38,16 +38,12 @@ if __name__ == "__main__":
     print(acc_coco_ord)
 
     # save results
-    print(acc_vgr)
-    print(acc_vga)
-    print(acc_coco_ord)
-
     res_clip_path = "clip_perf_aro.txt"
     if path.exists(res_clip_path):
         res_clip_file = open(res_clip_path , 'w')
     else:
         res_clip_file = open(res_clip_path, 'x')
 
-    res_clip_file.write("vgr : " + str(acc_vgr))
-    res_clip_file.write("vga : " + str(acc_vga))
+    res_clip_file.write("vgr : " + str(acc_vgr) + "\n")
+    res_clip_file.write("vga : " + str(acc_vga) + "\n")
     res_clip_file.write("coco-order : " + str(acc_coco_ord))
