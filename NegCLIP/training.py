@@ -58,11 +58,11 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
 
             # encoding + cosine similarity as logits
             logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            logits_per_image = logits_per_image[:, :2 * BATCH_SIZE]  # keeping only the true captions to compute loss
+            logits_per_image = logits_per_image[:,:2 * BATCH_SIZE]  # keeping only the true captions to compute loss
             logits_per_text = logits_per_image.t()
 
             # loss
-            labels = torch.arange(2 * BATCH_SIZE)
+            labels = torch.arange(2 * BATCH_SIZE).to(device)
             loss_text = cross_entropy(logits_per_text, labels)
             loss_image = cross_entropy(logits_per_image, labels)
             loss = (loss_text + loss_image) / 2
@@ -106,12 +106,12 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
 
                 # encoding + cosine similarity as logits
                 logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-                logits_per_image = logits_per_image[:, 2 * BATCH_SIZE:]  # keeping only true captions to compute loss
+                logits_per_image = logits_per_image[:,:2 * BATCH_SIZE]  # keeping only true captions to compute loss
                 logits_per_text = logits_per_image.t()
                 print("logits per image: ",logits_per_image)
 
                 # loss
-                labels = torch.arange(2 * BATCH_SIZE)
+                labels = torch.arange(2 * BATCH_SIZE).to(device)
                 loss_text = cross_entropy(logits_per_text, labels)
                 print("loss text: ", loss_text)
                 loss_image = cross_entropy(logits_per_image, labels)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     # hyper params
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     SET_TYPE = "val"
-    BATCH_SIZE = 2
+    BATCH_SIZE = 32
     MAX_EPOCHS = 5
     WARMUP_STEPS = 50
     VALSET_SIZE = 0.15
