@@ -116,3 +116,22 @@ class COCOOrderDataset(Dataset):
         image = self._load_image(item["image_id"])
         return image, captions
 
+
+def evaluate(dataloader, model, device):
+    """
+    Evaluate model on the dataset in the dataloader
+    :param dataloader: pytorch dataloader
+    :param model : model to evaluate
+    :param device : cuda or cpu
+    :return: accuracy
+    """
+    acc = 0
+    for _, vgr_data in enumerate(dataloader):
+        image, captions = vgr_data
+        captions = captions.flatten(0, 1).to(device)
+        image = image.to(device)
+        logits_per_image, logits_per_text = model(image, captions)
+        probs = logits_per_image.softmax(dim=-1).squeeze()
+        if max(probs) == probs[0]:
+            acc += 1
+    return acc / len(dataloader)
