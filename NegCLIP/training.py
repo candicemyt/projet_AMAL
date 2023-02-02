@@ -14,29 +14,8 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.nn.functional import cross_entropy
-from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset
+from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 from torch.utils.tensorboard import SummaryWriter
-
-
-
-def evaluate(dataloader, model, device):
-    """
-    Evaluate model on the dataset in the dataloader
-    :param dataloader: pytorch dataloader
-    :param model : model to evaluate
-    :param device : cuda or cpu
-    :return: accuracy
-    """
-    acc = 0
-    for _, vgr_data in enumerate(dataloader):
-        image, captions = vgr_data
-        captions = captions.flatten(0, 1).to(device)
-        image = image.to(device)
-        logits_per_image, logits_per_text = model(image, captions)
-        probs = logits_per_image.softmax(dim=-1).squeeze()
-        if max(probs) == probs[0]:
-            acc += 1
-    return acc / len(dataloader)
 
 
 def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, vga_loader, coco_order_loader,
