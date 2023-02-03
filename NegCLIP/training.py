@@ -54,24 +54,14 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
             with torch.no_grad():
                 model.logit_scale.clamp_(0, np.log(100))
 
-
-            # evaluate on ARO
-            acc_vgr = evaluate(vgr_loader, model, device)
-            acc_vga = evaluate(vga_loader, model, device)
-            acc_coco_order = evaluate(coco_order_loader, model, device)
-
             # logs
             step = epoch * len(train_loader) + i
             writer.add_scalar("loss/train", loss.item(), step)
             writer.add_scalar("loss/image/train", loss_image.item(), step)
             writer.add_scalar("loss/text/train", loss_text.item(), step)
-            writer.add_scalar("evaluate/VGR/train", acc_vgr, step)
-            writer.add_scalar("evaluate/VGA/train", acc_vga, step)
-            writer.add_scalar("evaluate/COCO_order/train", acc_coco_order, step)
 
-            # save weights
-            if i % (len(train_loader) / 10) == 0:
-                torch.save(model.state_dict(), f"weights/epoch{epoch}_step{step}.pth")
+        # save weights
+        torch.save(model.state_dict(), f"weights/epoch{epoch}_step{step}.pth")
 
         # VAL
         model.eval()
@@ -89,14 +79,11 @@ def training(model, optimizer, scheduler, train_loader, val_loader, vgr_loader, 
                 logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
                 logits_per_image = logits_per_image[:,:2 * b]  # keeping only true captions to compute loss
                 logits_per_text = logits_per_image.t()
-                print("logits per image: ",logits_per_image)
 
                 # loss
                 labels = torch.arange(2 * b).to(device)
                 loss_text = cross_entropy(logits_per_text, labels)
-                print("loss text: ", loss_text)
                 loss_image = cross_entropy(logits_per_image, labels)
-                print("loss image: ", loss_image)
                 loss = (loss_text + loss_image) / 2
 
                 # evaluate on ARO
