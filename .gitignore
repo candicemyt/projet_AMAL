@@ -2,6 +2,8 @@ ARO_benchmark/GQA_raw/
 ARO_benchmark/VGA_VGR/
 ARO_benchmark/__pycache__/
 ARO_benchmark/COCO_Order/
+ARO_benchmark/clip_perf_aro.txt
+ARO_benchmark/negclip_perf_aro.txt
 .idea/
 raw_data/
 process_data/
