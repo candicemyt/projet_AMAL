@@ -8,7 +8,7 @@ import sys
 if __name__ == "__main__":
     #params
     VGA_VGR_PATH = "VGA_VGR/"
-    COCO_ORDER_PATH = "COCO_Order/captions_negcaptions.json"
+    COCO_ORDER_PATH = "COCO_Order/captions_shuffled_captions.json"
     SET_TYPE = "train"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     WEIGHTS_PATH = "../NegCLIP/weights/epoch4_step6888.pth"

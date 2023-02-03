@@ -15,9 +15,10 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 
 
-def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, coco_order_loader,
-             max_epochs, device):
-    writer = SummaryWriter(log_dir=f"runs/negclip_run2_lr={LR}")
+def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, coco_order_loader, max_epochs, device):
+
+    run = f"runs/negclip_epoch{max_epochs}_lr={LR}"
+    writer = SummaryWriter(log_dir=run)
 
     for epoch in tqdm(range(max_epochs)):
         # TRAIN
@@ -60,7 +61,7 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             writer.add_scalar("loss/text/train", loss_text.item(), step)
 
         # save weights
-        torch.save(model.state_dict(), f"weights/epoch{epoch}_step{step}.pth")
+        torch.save(model.state_dict(), f"weights/{run}/epoch{epoch}.pth")
 
         # VAL
         model.eval()
@@ -72,9 +73,9 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             acc_coco_order = evaluate(coco_order_loader, model, device)
 
             # logs
-            writer.add_scalar("evaluate/VGR", acc_vgr, step)
-            writer.add_scalar("evaluate/VGA", acc_vga, step)
-            writer.add_scalar("evaluate/COCO_order", acc_coco_order, step)
+            writer.add_scalar("evaluate/VGR", acc_vgr, epoch)
+            writer.add_scalar("evaluate/VGA", acc_vga, epoch)
+            writer.add_scalar("evaluate/COCO_order", acc_coco_order, epoch)
 
 
 if __name__ == "__main__":
@@ -82,13 +83,12 @@ if __name__ == "__main__":
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     SET_TYPE = "val"
     BATCH_SIZE = 20
-    MAX_EPOCHS = 5
+    MAX_EPOCHS = 10
     WARMUP_STEPS = 50
-    VALSET_SIZE = 0.15
     SHUFFLE_DTS = False
-    LR = 1e-5  # picked one of the three proposed : {1e − 5, 5e − 6, 1e − 6}
+    LR = 1e-6  # picked one of the three proposed : {1e − 5, 5e − 6, 1e − 6}
     VGA_VGR_PATH = "../ARO_benchmark/VGA_VGR/"
-    COCO_ORDER_PATH = "../ARO_benchmark/COCO_Order/captions_negcaptions.json"
+    COCO_ORDER_PATH = "../ARO_benchmark/COCO_Order/captions_shuffled_captions.json"
     NB_TESTCASES = 1000
 
     # load pretrain model
