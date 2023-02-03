@@ -17,8 +17,8 @@ from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 
 def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, coco_order_loader, max_epochs, device):
 
-    run = f"runs/negclip_epoch{max_epochs}_lr={LR}"
-    writer = SummaryWriter(log_dir=run)
+    run = f"negclip-epoch{max_epochs}-lr={LR}"
+    writer = SummaryWriter(log_dir="runs/"+run)
 
     for epoch in tqdm(range(max_epochs)):
         # TRAIN
@@ -61,7 +61,7 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             writer.add_scalar("loss/text/train", loss_text.item(), step)
 
         # save weights
-        torch.save(model.state_dict(), f"weights/{run}/epoch{epoch}.pth")
+        torch.save(model.state_dict(), f"weights/{run}_epoch{epoch}.pth")
 
         # VAL
         model.eval()
