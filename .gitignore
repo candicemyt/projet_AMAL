@@ -15,6 +15,7 @@ NegCLIP/runs/
 NegCLIP/weights/
 COCO/annotations/
 COCO/val2014
+COCO/train2014
 CLIP/openai_clip.py
 CLIP/clip_weights/
 CLIP/dev.py
