@@ -17,7 +17,7 @@ from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 
 def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, coco_order_loader, max_epochs, device):
 
-    run = f"negclip-epoch{max_epochs}-lr={LR}"
+    run = f"negclip-epoch{max_epochs}-lr{LR}"
     writer = SummaryWriter(log_dir="runs/"+run)
 
     for epoch in tqdm(range(max_epochs)):
