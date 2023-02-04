@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     models_to_test = [arg for arg in sys.argv]
 
-    if "clip" in models_to_test or "negclip" in models_to_test:
+    if "clip" in models_to_test or "negclip" in models_to_test or "myclip" in models_to_test:
         # load pretrain model
         clip_model, clip_preprocess = clip.load("ViT-B/32", device=DEVICE)
         clip_model = clip_model.float()
@@ -89,29 +89,29 @@ if __name__ == "__main__":
                 res_negclip_file.write("vga : " + str(acc_vga) + "\n")
                 res_negclip_file.write("coco-order : " + str(acc_coco_ord))
 
-    if "myclip" in models_to_test:
-        my_clip = MyClip(embedding_size=512, vision_embedding=768, seq_length=77,
-                         num_heads=8, vocab_size=49408, n_blocks=12,
-                         output_dim=512, kernel_size=32, stride=32, input_resolution=224)
+        if "myclip" in models_to_test:
+            my_clip = MyClip(embedding_size=512, vision_embedding=768, seq_length=77,
+                             num_heads=8, vocab_size=49408, n_blocks=12,
+                             output_dim=512, kernel_size=32, stride=32, input_resolution=224)
 
-        my_clip.load_state_dict(torch.load(MYCLIP_WEIGHTS_PATH, map_location=DEVICE))
-        my_clip.eval()
+            my_clip.load_state_dict(torch.load(MYCLIP_WEIGHTS_PATH, map_location=DEVICE))
+            my_clip.eval()
 
-        print("Evaluation of my clip on ARO")
-        acc_vgr = evaluate(vgr_loader, my_clip, DEVICE)
-        print(acc_vgr)
-        acc_vga = evaluate(vga_loader, my_clip, DEVICE)
-        print(acc_vga)
-        acc_coco_ord = evaluate(coco_order_loader, my_clip, DEVICE)
-        print(acc_coco_ord)
+            print("Evaluation of my clip on ARO")
+            acc_vgr = evaluate(vgr_loader, my_clip, DEVICE)
+            print(acc_vgr)
+            acc_vga = evaluate(vga_loader, my_clip, DEVICE)
+            print(acc_vga)
+            acc_coco_ord = evaluate(coco_order_loader, my_clip, DEVICE)
+            print(acc_coco_ord)
 
-        # save results
-        res_myclip_path = "myclip_perf_aro.txt"
-        if os.path.exists(res_myclip_path):
-            res_myclip_file = open(res_myclip_path, 'w')
-        else:
-            res_myclip_file = open(res_myclip_path, 'x')
+            # save results
+            res_myclip_path = "myclip_perf_aro.txt"
+            if os.path.exists(res_myclip_path):
+                res_myclip_file = open(res_myclip_path, 'w')
+            else:
+                res_myclip_file = open(res_myclip_path, 'x')
 
-        res_myclip_file.write("vgr : " + str(acc_vgr) + "\n")
-        res_myclip_file.write("vga : " + str(acc_vga) + "\n")
-        res_myclip_file.write("coco-order : " + str(acc_coco_ord)+"\n")
+            res_myclip_file.write("vgr : " + str(acc_vgr) + "\n")
+            res_myclip_file.write("vga : " + str(acc_vga) + "\n")
+            res_myclip_file.write("coco-order : " + str(acc_coco_ord)+"\n")
