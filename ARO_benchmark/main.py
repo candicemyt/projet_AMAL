@@ -2,18 +2,23 @@ from evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 import clip
 import torch
 from torch.utils.data import DataLoader
-from os import path
+import os
 import sys
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+from CLIP.my_clip import Clip as MyClip
+
 if __name__ == "__main__":
-    #params
+    # params
     VGA_VGR_PATH = "VGA_VGR/"
     COCO_ORDER_PATH = "COCO_Order/captions_shuffled_captions.json"
     SET_TYPE = "train"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    WEIGHTS_PATHS = ["../NegCLIP/weights/negclip-epoch10-lr1e-05_epoch9.pth",
-                     "../NegCLIP/weights/negclip-epoch10-lr1e-06_epoch9.pth",
-                     "../NegCLIP/weights/negclip-epoch10-lr5e-06_epoch9.pth"]
+    NEG_WEIGHTS_PATHS = ["../NegCLIP/weights/negclip-epoch10-lr1e-05_epoch9.pth",
+                         "../NegCLIP/weights/negclip-epoch10-lr1e-06_epoch9.pth",
+                         "../NegCLIP/weights/negclip-epoch10-lr5e-06_epoch9.pth"]
+    MYCLIP_WEIGHTS_PATH = "../CLIP/my_clip_weights.pth"
 
     models_to_test = [arg for arg in sys.argv]
 
@@ -49,8 +54,8 @@ if __name__ == "__main__":
 
             # save results
             res_clip_path = "clip_perf_aro.txt"
-            if path.exists(res_clip_path):
-                res_clip_file = open(res_clip_path , 'w')
+            if os.path.exists(res_clip_path):
+                res_clip_file = open(res_clip_path, 'w')
             else:
                 res_clip_file = open(res_clip_path, 'x')
 
@@ -61,12 +66,12 @@ if __name__ == "__main__":
         if "negclip" in models_to_test:
             # save results in file
             res_negclip_path = "negclip_perf_aro.txt"
-            if path.exists(res_negclip_path):
+            if os.path.exists(res_negclip_path):
                 res_negclip_file = open(res_negclip_path, 'a')
             else:
                 res_negclip_file = open(res_negclip_path, 'x')
 
-            for weight_path in WEIGHTS_PATHS:
+            for weight_path in NEG_WEIGHTS_PATHS:
                 clip_model.load_state_dict(torch.load(weight_path, map_location=DEVICE))
                 negclip_model = clip_model
                 negclip_model.eval()
@@ -83,3 +88,30 @@ if __name__ == "__main__":
                 res_negclip_file.write("vgr : " + str(acc_vgr) + "\n")
                 res_negclip_file.write("vga : " + str(acc_vga) + "\n")
                 res_negclip_file.write("coco-order : " + str(acc_coco_ord))
+
+        if "myclip" in models_to_test:
+            my_clip = MyClip(embedding_size=512, vision_embedding=768, seq_length=77,
+                             num_heads=8, vocab_size=49408, n_blocks=12,
+                             output_dim=512, kernel_size=32, stride=32, input_resolution=224)
+
+            my_clip.load_state_dict(torch.load(MYCLIP_WEIGHTS_PATH, map_location=DEVICE))
+            my_clip.eval()
+
+            print("Evaluation of my clip on ARO")
+            acc_vgr = evaluate(vgr_loader, my_clip, DEVICE)
+            print(acc_vgr)
+            acc_vga = evaluate(vga_loader, my_clip, DEVICE)
+            print(acc_vga)
+            acc_coco_ord = evaluate(coco_order_loader, my_clip, DEVICE)
+            print(acc_coco_ord)
+
+            # save results
+            res_myclip_path = "myclip_perf_aro.txt"
+            if os.path.exists(res_myclip_path):
+                res_myclip_file = open(res_myclip_path, 'w')
+            else:
+                res_myclip_file = open(res_myclip_path, 'x')
+
+            res_myclip_file.write("vgr : " + str(acc_vgr) + "\n")
+            res_myclip_file.write("vga : " + str(acc_vga) + "\n")
+            res_myclip_file.write("coco-order : " + str(acc_coco_ord)+"\n")
