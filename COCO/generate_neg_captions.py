@@ -12,11 +12,6 @@ def shuffle(caption, first_token, second_token):
     sentence_mid_beg = caption.index(first_token) + len(first_token)
     sentence_mid_end = caption.index(second_token)
     sentence_end = caption.index(second_token) + len(second_token)
-    #print("beg", caption[0:sentence_beg])
-    #print("second", second_token)
-    #print("mid", sentence_mid_beg, sentence_mid_end, caption[sentence_mid_beg:sentence_mid_end])
-    #print("first", first_token)
-    #print("end", caption[sentence_end::])
     shuffled_caption = caption[0:sentence_beg] + second_token + \
                        caption[sentence_mid_beg:sentence_mid_end] + \
                        first_token + caption[sentence_end::]
@@ -40,7 +35,6 @@ def shuffle_caption(caption):
         for word1, word2 in combinations(word_list, 2):
             if word1 not in word2 and word2 not in word1:
                 shuffled_caption = shuffle(caption, word1, word2)
-                #print(word_type)
                 shuffled_captions.append(shuffled_caption)
                 break
 
@@ -57,7 +51,8 @@ def shuffle_caption(caption):
 def generate_neg_captions(set_type):
 
     #open file
-    with open(f"annotations/captions_{set_type}2014.json", 'r') as f:
+    part = 1
+    with open(f"annotations/captions_part{part}_{set_type}2014.json", 'r') as f:
         data = json.load(f)
     raw_captions_list = data["annotations"]
 
@@ -72,8 +67,8 @@ def generate_neg_captions(set_type):
 
     # write files
     data["annotations"] = processed_captions_list
-    with open(f"annotations/captions_negcaptions_{set_type}2014.json", 'w') as f:
+    with open(f"annotations/captions_negcaptions_part{part}_{set_type}2014.json", 'w') as f:
         json.dump(data, f)
 
 
-generate_neg_captions("val")
+generate_neg_captions("train")
