@@ -11,7 +11,9 @@ if __name__ == "__main__":
     COCO_ORDER_PATH = "COCO_Order/captions_shuffled_captions.json"
     SET_TYPE = "train"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    WEIGHTS_PATH = "../NegCLIP/weights/epoch4_step6888.pth"
+    WEIGHTS_PATHS = ["../NegCLIP/weights/negclip-epoch10-lr1e-05_epoch9.pth",
+                     "../NegCLIP/weights/negclip-epoch10-lr1e-06_epoch9.pth",
+                     "../NegCLIP/weights/negclip-epoch10-lr5e-06_epoch9.pth"]
 
     models_to_test = [arg for arg in sys.argv]
 
@@ -57,26 +59,27 @@ if __name__ == "__main__":
             res_clip_file.write("coco-order : " + str(acc_coco_ord))
 
         if "negclip" in models_to_test:
-
-            clip_model.load_state_dict(torch.load(WEIGHTS_PATH, map_location=DEVICE))
-            negclip_model = clip_model
-            negclip_model.eval()
-
-            print("Evaluation of NegClip on ARO")
-            acc_vgr = evaluate(vgr_loader, negclip_model, DEVICE)
-            print(acc_vgr)
-            acc_vga = evaluate(vga_loader, negclip_model, DEVICE)
-            print(acc_vga)
-            acc_coco_ord = evaluate(coco_order_loader, negclip_model, DEVICE)
-            print(acc_coco_ord)
-
-            # save results
+            # save results in file
             res_negclip_path = "negclip_perf_aro.txt"
             if path.exists(res_negclip_path):
-                res_negclip_file = open(res_negclip_path, 'w')
+                res_negclip_file = open(res_negclip_path, 'a')
             else:
                 res_negclip_file = open(res_negclip_path, 'x')
 
-            res_negclip_file.write("vgr : " + str(acc_vgr) + "\n")
-            res_negclip_file.write("vga : " + str(acc_vga) + "\n")
-            res_negclip_file.write("coco-order : " + str(acc_coco_ord))
+            for weight_path in WEIGHTS_PATHS:
+                clip_model.load_state_dict(torch.load(weight_path, map_location=DEVICE))
+                negclip_model = clip_model
+                negclip_model.eval()
+
+                print("Evaluation of NegClip on ARO")
+                acc_vgr = evaluate(vgr_loader, negclip_model, DEVICE)
+                print(acc_vgr)
+                acc_vga = evaluate(vga_loader, negclip_model, DEVICE)
+                print(acc_vga)
+                acc_coco_ord = evaluate(coco_order_loader, negclip_model, DEVICE)
+                print(acc_coco_ord)
+
+                res_negclip_file.write(weight_path.split('/')[3] + "\n")
+                res_negclip_file.write("vgr : " + str(acc_vgr) + "\n")
+                res_negclip_file.write("vga : " + str(acc_vga) + "\n")
+                res_negclip_file.write("coco-order : " + str(acc_coco_ord))
