@@ -151,6 +151,7 @@ class VisionTransformer(nn.Module):
         self.n_blocks = n_blocks
         self.num_heads = num_heads
         scale = embedding_size ** -0.5
+        self.mask = None
 
         self.positional_encoding = nn.Parameter(scale * torch.randn((input_resolution // kernel_size) ** 2 + 1, embedding_size))
         self.cls = nn.Parameter(scale * torch.randn(embedding_size))
