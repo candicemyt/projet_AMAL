@@ -56,7 +56,7 @@ def compute_pairwise_sim(dataloader, file_writer, model, device):
 if __name__ == '__main__':
     # params
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    set_type = 'val'
+    set_type = 'train'
     part = 1
 
     # init file
@@ -70,8 +70,8 @@ if __name__ == '__main__':
 
     # loading model
     model, preprocess = clip.load("ViT-B/32", device=device)
-    coco_dts = COCODatasetImSim(root='val2014/',
-                                annFile='annotations/captions_val2014.json',
+    coco_dts = COCODatasetImSim(root=f'{set_type}2014/',
+                                annFile=f'annotations/captions_{set_type}2014.json',
                                 transform=preprocess)
     coco_loader = DataLoader(coco_dts, batch_size=128)
     compute_pairwise_sim(coco_loader, writer, model, device)

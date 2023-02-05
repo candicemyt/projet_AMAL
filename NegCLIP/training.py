@@ -81,7 +81,7 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
 if __name__ == "__main__":
     # hyper params
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    SET_TYPE = "val"
+    SET_TYPE = "train"
     BATCH_SIZE = 20
     MAX_EPOCHS = 10
     WARMUP_STEPS = 50
@@ -103,15 +103,15 @@ if __name__ == "__main__":
     coco_loader = DataLoader(coco_dts, batch_size=BATCH_SIZE)
 
     # setup dataloader for evaluation
-    vgr_dts = VGDataset(VGA_VGR_PATH + f"/{SET_TYPE}/dataset_relations.csv", VGA_VGR_PATH + "images",
+    vgr_dts = VGDataset(VGA_VGR_PATH + f"/val/dataset_relations.csv", VGA_VGR_PATH + "images",
                         NB_TESTCASES, image_tranform=preprocess, text_transform=clip.tokenize)
     vgr_loader = DataLoader(vgr_dts)
 
-    vga_dts = VGDataset(VGA_VGR_PATH + f"/{SET_TYPE}/dataset_attributes.csv", VGA_VGR_PATH + "images",
+    vga_dts = VGDataset(VGA_VGR_PATH + f"/val/dataset_attributes.csv", VGA_VGR_PATH + "images",
                         NB_TESTCASES, image_tranform=preprocess, text_transform=clip.tokenize)
     vga_loader = DataLoader(vga_dts)
 
-    coco_order_dts = COCOOrderDataset(COCO_ORDER_PATH, f'../COCO/{SET_TYPE}2014/COCO_{SET_TYPE}2014_', SET_TYPE,
+    coco_order_dts = COCOOrderDataset(COCO_ORDER_PATH, f'../COCO/val2014/COCO_val2014_', "val",
                                       NB_TESTCASES, image_tranform=preprocess, text_transform=clip.tokenize)
     coco_order_loader = DataLoader(coco_order_dts)
 
