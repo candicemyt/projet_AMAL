@@ -95,6 +95,7 @@ if __name__ == "__main__":
                              output_dim=512, kernel_size=32, stride=32, input_resolution=224)
 
             my_clip.load_state_dict(torch.load(MYCLIP_WEIGHTS_PATH, map_location=DEVICE))
+            my_clip.to(DEVICE)
             my_clip.eval()
 
             print("Evaluation of my clip on ARO")
