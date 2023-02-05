@@ -32,8 +32,13 @@ def compute_pairwise_sim(dataloader, file_writer, model, device):
             ids = torch.cat((ids, image_ids.to(device)))
             encoded_images = torch.cat((encoded_images, model.encode_image(images.to(device))))
 
+        nb_images = encoded_images.shape[0]
+        beg = (part-1) * (nb_images//5)
+        end = beg + (nb_images//5)
+        if part == 4:
+            end = nb_images
         print("Boucle de calcul de similarité")
-        for i, image1_features in tqdm(enumerate(encoded_images), total=encoded_images.shape[0]):
+        for i, image1_features in tqdm(enumerate(encoded_images[beg:end]), total=end-beg):
             similarities = torch.zeros(encoded_images.shape[0], device=device)
             image_id = ids[i]
             for j, image2_features in enumerate(encoded_images):
@@ -51,10 +56,11 @@ def compute_pairwise_sim(dataloader, file_writer, model, device):
 if __name__ == '__main__':
     # params
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    set_type = 'val'
+    set_type = 'train'
+    part = 1
 
     # init file
-    pairwise_sim_path = f"pairwise_sim/{set_type}.csv"
+    pairwise_sim_path = f"pairwise_sim/part{part}_{set_type}.csv"
     if path.exists(pairwise_sim_path):
         dataset_pairwise_sim_file = open(pairwise_sim_path, 'w')
     else:
@@ -64,8 +70,8 @@ if __name__ == '__main__':
 
     # loading model
     model, preprocess = clip.load("ViT-B/32", device=device)
-    coco_dts = COCODatasetImSim(root='val2014/',
-                                annFile='annotations/captions_val2014.json',
+    coco_dts = COCODatasetImSim(root=f'{set_type}2014/',
+                                annFile=f'annotations/captions_{set_type}2014.json',
                                 transform=preprocess)
     coco_loader = DataLoader(coco_dts, batch_size=128)
     compute_pairwise_sim(coco_loader, writer, model, device)
