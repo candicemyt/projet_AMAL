@@ -35,7 +35,7 @@ def compute_pairwise_sim(dataloader, file_writer, model, device):
         nb_images = encoded_images.shape[0]
         beg = (part-1) * (nb_images//5)
         end = beg + (nb_images//5)
-        if part == 4:
+        if part == 5:
             end = nb_images
         print("Boucle de calcul de similarité")
         for i, image1_features in tqdm(enumerate(encoded_images[beg:end]), total=end-beg):
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     # params
     device = "cuda" if torch.cuda.is_available() else "cpu"
     set_type = 'train'
-    part = 1
+    part = 4
 
     # init file
     pairwise_sim_path = f"pairwise_sim/part{part}_{set_type}.csv"
