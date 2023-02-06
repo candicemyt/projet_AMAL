@@ -16,10 +16,11 @@ NegCLIP/weights/
 COCO/annotations/
 COCO/val2014
 COCO/train2014
+COCO/pairwise_sim/
 CLIP/openai_clip.py
 CLIP/clip_weights/
 CLIP/dev.py
-COCO_ORDER/
+COCO_ORDER//
 GQA_raw/
 CLIP/func_attention.py
 CLIP/my_clip_weights/
