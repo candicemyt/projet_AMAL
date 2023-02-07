@@ -1,5 +1,8 @@
 import sys
 import os
+import os
+import sys
+
 from COCO_Dataset import COCODataset
 from torch.utils.data import DataLoader
 import clip
@@ -35,37 +38,23 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             captions_neg = captions[:, 2:, :].flatten(0, 1)
             images = images.flatten(0, 1)  # BSCHW -> (B*S)CHW
 
-            ##### original loss ######
+            #forward pass + normalization
+            encoded_text = model.encode_text(torch.cat((captions_pos, captions_neg))) 
+            encoded_text = encoded_text/encoded_text.norm(dim=1, keepdim=True)
+            encoded_image = model.encode_image(images) 
+            encoded_image = encoded_image/encoded_image.norm(dim=1, keepdim=True)
 
-            # # encoding + cosine similarity as logits
-            # logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            # logits_per_image = logits_per_image[:, :2 * b]  # keeping only the true captions to compute loss
-            # logits_per_text = logits_per_image.t()
+            sim_text_text = model.logit_scale * encoded_text @ encoded_text.t()
+            logits = model.logit_scale * encoded_image @ encoded_text.t()
 
-            # # loss
-            # labels = torch.arange(2 * b).to(device)
-
-            # loss_text = cross_entropy(logits_per_text, labels)
-            # loss_image = cross_entropy(logits_per_image, labels)
-            # loss = (loss_text + loss_image) / 2
-
-            ###########################
-
-            #####possible rectification #####
-            # encoding + cosine similarity as logits
-            logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            logits_per_image = logits_per_image  
-            logits_per_text = logits_per_image[:, :2 * b].t() # keeping only the true captions to compute loss
-
-            num_logits = logits_per_image.shape[0]
+            num_logits = logits.shape[0]
             # loss
-            labels = torch.arange(num_logits).to(device)
-
-            loss_text = cross_entropy(logits_per_text, labels)
-            loss_image = cross_entropy(logits_per_image, labels)
-            loss = (loss_text + loss_image) / 2
-
-            ##################################
+            labels_text = torch.arange(2*num_logits).to(device)
+            labels_image = torch.arange(num_logits).to(device)
+            loss_text_text = cross_entropy(sim_text_text, labels_text)
+            loss_image_text = cross_entropy(logits, labels_image)
+            loss = (loss_image_text+loss_text_text)/2
+            
             loss.backward()
             optimizer.step()
             scheduler.step()
@@ -76,9 +65,14 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
 
             # logs
             step = epoch * len(coco_loader) + i
+
+            #compute similarity between pos and neg caption
+            sim = torch.tensor([logits[i,(i+b)%(2*b)] for i in range(2*b)]).mean() 
+
+            #add logs
             writer.add_scalar("loss/train", loss.item(), step)
-            writer.add_scalar("loss/image/train", loss_image.item(), step)
-            writer.add_scalar("loss/text/train", loss_text.item(), step)
+            writer.add_scalar("loss/train", loss.item(), step)
+            writer.add_scalar("similarity_pos_neg/train", sim.item(), step)
 
         # save weights
         torch.save(model.state_dict(), f"weights/{run}_epoch{epoch}.pth")
