@@ -57,9 +57,10 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             logits_per_image = logits_per_image  # keeping only the true captions to compute loss
             logits_per_text = logits_per_image[:, :2 * b].t()
 
+            num_logits = logits_per_image.shape[0]
             # loss
-            labels_im = torch.arange(2 * b).to(device)
-            labels_text = torch.arange(2 * b).to(device)
+            labels_im = torch.arange(num_logits).to(device)
+            labels_text = torch.arange(num_logits).to(device)
 
             loss_text = cross_entropy(logits_per_text, labels_text)
             loss_image = cross_entropy(logits_per_image, labels_im)
@@ -101,8 +102,8 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
 if __name__ == "__main__":
     # hyper params
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    SET_TYPE = "train"
-    BATCH_SIZE = 20
+    SET_TYPE = "val"
+    BATCH_SIZE = 2
     MAX_EPOCHS = 10
     WARMUP_STEPS = 50
     SHUFFLE_DTS = False
