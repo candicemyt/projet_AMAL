@@ -35,17 +35,37 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             captions_neg = captions[:, 2:, :].flatten(0, 1)
             images = images.flatten(0, 1)  # BSCHW -> (B*S)CHW
 
+            ##### original loss ######
+
+            # # encoding + cosine similarity as logits
+            # logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
+            # logits_per_image = logits_per_image[:, :2 * b]  # keeping only the true captions to compute loss
+            # logits_per_text = logits_per_image.t()
+
+            # # loss
+            # labels = torch.arange(2 * b).to(device)
+
+            # loss_text = cross_entropy(logits_per_text, labels)
+            # loss_image = cross_entropy(logits_per_image, labels)
+            # loss = (loss_text + loss_image) / 2
+
+            ###########################
+
+            #####possible rectification #####
             # encoding + cosine similarity as logits
             logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            logits_per_image = logits_per_image[:, :2 * b]  # keeping only the true captions to compute loss
-            logits_per_text = logits_per_image.t()
+            logits_per_image = logits_per_image  # keeping only the true captions to compute loss
+            logits_per_text = logits_per_image[:, :2 * b].t()
 
             # loss
-            labels = torch.arange(2 * b).to(device)
+            labels_im = torch.arange(4 * b).to(device)
+            labels_text = torch.arange(2 * b).to(device)
 
-            loss_text = cross_entropy(logits_per_text, labels)
-            loss_image = cross_entropy(logits_per_image, labels)
+            loss_text = cross_entropy(logits_per_text, labels_text)
+            loss_image = cross_entropy(logits_per_image, labels_im)
             loss = (loss_text + loss_image) / 2
+            
+            ##################################
             loss.backward()
             optimizer.step()
             scheduler.step()
