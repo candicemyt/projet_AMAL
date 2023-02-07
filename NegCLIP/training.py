@@ -102,8 +102,8 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
 if __name__ == "__main__":
     # hyper params
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    SET_TYPE = "val"
-    BATCH_SIZE = 2
+    SET_TYPE = "train"
+    BATCH_SIZE = 20
     MAX_EPOCHS = 10
     WARMUP_STEPS = 50
     SHUFFLE_DTS = False
