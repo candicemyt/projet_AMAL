@@ -58,13 +58,13 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             logits_per_text = logits_per_image[:, :2 * b].t()
 
             # loss
-            labels_im = torch.arange(4 * b).to(device)
+            labels_im = torch.arange(2 * b).to(device)
             labels_text = torch.arange(2 * b).to(device)
 
             loss_text = cross_entropy(logits_per_text, labels_text)
             loss_image = cross_entropy(logits_per_image, labels_im)
             loss = (loss_text + loss_image) / 2
-            
+
             ##################################
             loss.backward()
             optimizer.step()
