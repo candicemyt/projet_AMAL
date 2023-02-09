@@ -23,7 +23,7 @@ if __name__ == "__main__":
                          "../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr5e-06_epoch6.pth",
                          "../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr5e-06_epoch8.pth",
                          "../Text_FineTuning/neclip-ftxt-lr5e-06-epoch9.pth/negclip-textft-epoch10-lr5e-06_epoch9.pth"]
-    MYCLIP_WEIGHTS_PATH = ""
+    MYCLIP_WEIGHTS_PATH = "../CLIP/weights/my_clip.pth"
 
     models_to_test = [arg for arg in sys.argv]
 
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         if "myclip" in models_to_test:
             my_clip = MyClip(embedding_size=512, vision_embedding=768, seq_length=77,
                              num_heads=8, vocab_size=49408, n_blocks=12,
-                             output_dim=512, kernel_size=32, stride=32, input_resolution=224)
+                             output_dim=512, kernel_size=32, stride=32, input_resolution=224, device=DEVICE)
 
             my_clip.load_state_dict(torch.load(MYCLIP_WEIGHTS_PATH, map_location=DEVICE))
             my_clip.to(DEVICE)

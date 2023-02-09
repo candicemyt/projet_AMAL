@@ -69,9 +69,9 @@ if __name__ == "__main__":
 
         model = MyClip(embedding_size=512, vision_embedding=768, seq_length=77,
                              num_heads=8, vocab_size=49408, n_blocks=12,
-                             output_dim=512, kernel_size=32, stride=32, input_resolution=224)
+                             output_dim=512, kernel_size=32, stride=32, input_resolution=224, device=device)
 
-        weight_path = "../CLIP/my_clip_weights/clip.pth"
+        weight_path = "../CLIP/weights/my_clip.pth"
         model.load_state_dict(torch.load(weight_path, map_location=device))
         model.to(device)
 

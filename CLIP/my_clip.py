@@ -145,9 +145,11 @@ class VisionTransformer(nn.Module):
                  stride,
                  output_dim,
                  input_resolution,
+                 device,
                  use_mask=False) -> None:
 
         super().__init__()
+        self.device = device
         self.n_blocks = n_blocks
         self.num_heads = num_heads
         scale = embedding_size ** -0.5
@@ -171,7 +173,7 @@ class VisionTransformer(nn.Module):
         x = self.convolution(x) #b w grid grid (grid=input_res/kernel_size)
         b, w, grid, grid = x.shape
         x = x.flatten(2).swapaxes(1,2) #b grid**2 w
-        cls = self.cls + torch.zeros(b, 1, w) # b 1 w
+        cls = self.cls + torch.zeros(b, 1, w).to(self.device) # b 1 w
         x = torch.cat((cls,x), dim=1) # b (input_res/kernel_size) **2 + 1 w
         x = x + self.positional_encoding
         x = self.norm1(x)
@@ -194,7 +196,8 @@ class Clip(nn.Module):
                  output_dim,
                  kernel_size,
                  stride,
-                 input_resolution) -> None:
+                 input_resolution,
+                 device) -> None:
 
         super().__init__()
         self.text_encoder = Transformer(embedding_size=embedding_size,
@@ -213,7 +216,8 @@ class Clip(nn.Module):
                                                kernel_size=kernel_size,
                                                stride=stride,
                                                output_dim=output_dim, 
-                                               input_resolution=input_resolution)
+                                               input_resolution=input_resolution,
+                                               device=device)
 
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 

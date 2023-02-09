@@ -29,3 +29,9 @@ Text_FineTuning/dev.ipynb
 Text_FineTuning/tsne_demo.py
 Text_FineTuning/runs/
 Text_FineTuning/weights/
+ARO_benchmark/FLAVA/
+CIFAR_benchmark/CIFAR/
+CIFAR_benchmark/MyCLIP_perf_CIFAR.txt
+CIFAR_benchmark/NegCLIP_perf_CIFAR.txt
+CLIP/weights/
+

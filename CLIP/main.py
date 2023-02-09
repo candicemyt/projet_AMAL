@@ -23,16 +23,17 @@ if __name__ == "__main__":
                 output_dim=512, #certain
                 kernel_size=32, #certain
                 stride=32, #certain
-                input_resolution=224).to(device)
+                input_resolution=224,
+                device=device).to(device)
 
-    model.load_state_dict(torch.load("./my_clip_weights/clip.pth"))
+    model.load_state_dict(torch.load("./weights/my_clip.pth"))
 
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
     texts = ["an image of a cat", "an image of a duck", "an image of a dog"]
 
     text_inputs = clip.tokenize(texts).to(device)
-    image_input = preprocess(image).to(device)
+    image_input = preprocess(image).unsqueeze(0).to(device)
 
     print(model(image_input, text_inputs))
 
