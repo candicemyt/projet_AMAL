@@ -62,7 +62,7 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             writer.add_scalar("loss/image/train", loss_image.item(), step)
             writer.add_scalar("loss/text/train", loss_text.item(), step)
 
-        # save weights
+        # save neclip-ftxt-lr5e-06-epoch9.pth
         torch.save(model.state_dict(), f"weights/{run}_epoch{epoch}.pth")
 
         # VAL
