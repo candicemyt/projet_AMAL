@@ -95,7 +95,7 @@ if __name__ == "__main__":
         print("accuracy cifar: ", acc_cifar)
 
         #save results
-        res_negclip_path = "./NegCLIP_perf_CIFAR.txt"
+        res_negclip_path = "./CLIP_perf_CIFAR.txt"
         if os.path.exists(res_negclip_path):
             res_myclip_file = open(res_negclip_path, 'w')
         else:
@@ -103,4 +103,21 @@ if __name__ == "__main__":
 
         res_myclip_file.write("CIFAR100 : " + str(acc_cifar) + "\n")
 
-    
+    elif "negclip_ftxt" in models_to_test:
+        print("Evaluation of negclip ftxt on CIFAR")
+
+        # Load the model
+        weight_path = "../Text_FineTuning/weights/neclip-ftxt-lr5e-06-epoch9.pth"
+        model.load_state_dict(torch.load(weight_path, map_location=device))
+
+        acc_cifar = evaluate(cifar100, model, device, preprocess)
+        print("accuracy cifar: ", acc_cifar)
+
+        #save results
+        res_negclip_path = "./NegCLIP-FTXT_perf_CIFAR.txt"
+        if os.path.exists(res_negclip_path):
+            res_myclip_file = open(res_negclip_path, 'w')
+        else:
+            res_myclip_file = open(res_negclip_path, 'x')
+
+        res_myclip_file.write("CIFAR100 : " + str(acc_cifar) + "\n")

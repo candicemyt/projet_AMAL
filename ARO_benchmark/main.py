@@ -15,13 +15,7 @@ if __name__ == "__main__":
     COCO_ORDER_PATH = "COCO_Order/captions_shuffled_captions.json"
     SET_TYPE = "train"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    NEG_WEIGHTS_PATHS = ["../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr1e-06_epoch9.pth",
-                         "../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr1e-05_epoch9.pth",
-                         "../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr5e-06_epoch0.pth",
-                         "../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr5e-06_epoch2.pth",
-                         "../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr5e-06_epoch4.pth",
-                         "../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr5e-06_epoch6.pth",
-                         "../NegCLIP/neclip-ftxt-lr5e-06-epoch9.pth/negclip-train-newloss-epoch10-lr5e-06_epoch8.pth",
+    NEG_WEIGHTS_PATHS = ["../NegCLIP/weights/negclip-train-newloss-epoch10-lr1e-06_epoch9.pth",
                          "../Text_FineTuning/neclip-ftxt-lr5e-06-epoch9.pth/negclip-textft-epoch10-lr5e-06_epoch9.pth"]
     MYCLIP_WEIGHTS_PATH = "../CLIP/weights/my_clip.pth"
 
