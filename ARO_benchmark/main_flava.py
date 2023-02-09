@@ -6,8 +6,8 @@ import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
+from transformers import FlavaModel, FlavaImageProcessor, BertTokenizerFast 
 
-from transformers import FlavaModel, FlavaImageProcessor, BertTokenizerFast
 if __name__ == "__main__":
     VGA_VGR_PATH = "VGA_VGR/"
     COCO_ORDER_PATH = "COCO_Order/captions_shuffled_captions.json"
