@@ -2,7 +2,6 @@ import os
 import clip
 import torch
 from torchvision.datasets import CIFAR100
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,18 +10,6 @@ from CLIP.my_clip import Clip as MyClip
 
 def evaluate(dataset, model, device, preprocess):
     acc = 0
-    # for i, (image, label) in tqdm(enumerate(dataloader), leave=False, total=len(loader)):
-    #     image_input = image.to(device)
-    #     label = label.to(device)
-    #     text_input = torch.cat([clip.tokenize(f"a photo of a {c}") for c in cifar100.classes]).to(device)
-    #     # Calculate features
-    #     with torch.no_grad():
-    #         image_features = model.encode_image(image_input)
-    #         text_features = model.encode_text(text_input)
-    #     image_features /= image_features.norm(dim=-1, keepdim=True)
-    #     text_features /= text_features.norm(dim=-1, keepdim=True)
-    #     similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
-    #     pred = similarity.argmax() #pas sur du 0
 
     for i in tqdm(range(len(dataset)), leave=False, total=len(dataset)):
         image, class_id = dataset[i]
@@ -45,7 +32,6 @@ def evaluate(dataset, model, device, preprocess):
 
 if __name__ == "__main__":
     #hyperparameters 
-    BATCH_SIZE = 1
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     models_to_test = [arg for arg in sys.argv]
@@ -54,8 +40,7 @@ if __name__ == "__main__":
     model, preprocess = clip.load('ViT-B/32', device)
 
     # Download the dataset
-    cifar100 = CIFAR100(root=os.path.expanduser("~/.cache"), download=True, train=False)
-    loader = DataLoader(cifar100, batch_size=BATCH_SIZE, shuffle=True)
+    cifar100 = CIFAR100(root=os.path.expanduser("CIFAR/"), download=True, train=False)
 
     if "negclip" in models_to_test:
         print("Evaluation of negclip on CIFAR")
@@ -64,7 +49,7 @@ if __name__ == "__main__":
         weight_path = "../NegCLIP/weights/negclip-train-newloss-epoch10-lr5e-06_epoch9.pth"
         model.load_state_dict(torch.load(weight_path, map_location=device))
 
-        acc_cifar = evaluate(loader, model, device)
+        acc_cifar = evaluate(cifar100, model, device, preprocess)
         print("accuracy cifar: ", acc_cifar)
 
         #save results
@@ -90,7 +75,7 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load(weight_path, map_location=device))
         model.to(device)
 
-        acc_cifar = evaluate(loader, model, device)
+        acc_cifar = evaluate(cifar100, model, device, preprocess)
         print("accuracy myclip cifar: ", acc_cifar)
 
         #save results
