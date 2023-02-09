@@ -70,8 +70,8 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             writer.add_scalar("loss/train", loss.item(), step)
             writer.add_scalar("similarity_pos_neg/train", sim.item(), step)
 
-        # save weights
-        torch.save(model.state_dict(), f"weights/{run}_epoch{epoch}.pth")
+        # save neclip-ftxt-lr5e-06-epoch9.pth
+        torch.save(model.state_dict(), f"weights/neclip-ftxt-lr5e-06-epoch9.pth/{run}_epoch{epoch}.pth")
 
         # VAL
         model.eval()
