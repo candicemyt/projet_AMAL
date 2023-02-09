@@ -17,7 +17,7 @@ from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 
 def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, coco_order_loader, max_epochs, device):
 
-    run = f"negclip-epoch{max_epochs}-lr{LR}"
+    run = f"negclip-train-newloss-epoch{max_epochs}-lr{LR}"
     writer = SummaryWriter(log_dir="runs/"+run)
 
     for epoch in tqdm(range(max_epochs)):
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     MAX_EPOCHS = 10
     WARMUP_STEPS = 50
     SHUFFLE_DTS = False
-    LR = 1e-6  # picked one of the three proposed : {1e − 5, 5e − 6, 1e − 6}
+    LR = 1e-5  # picked one of the three proposed : {1e − 5, 5e − 6, 1e − 6}
     VGA_VGR_PATH = "../ARO_benchmark/VGA_VGR/"
     COCO_ORDER_PATH = "../ARO_benchmark/COCO_Order/captions_shuffled_captions.json"
     NB_TESTCASES = 1000

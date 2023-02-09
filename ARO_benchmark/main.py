@@ -15,9 +15,7 @@ if __name__ == "__main__":
     COCO_ORDER_PATH = "COCO_Order/captions_shuffled_captions.json"
     SET_TYPE = "train"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    NEG_WEIGHTS_PATHS = ["../NegCLIP/weights/negclip-epoch10-lr1e-05_epoch9.pth",
-                         "../NegCLIP/weights/negclip-epoch10-lr1e-06_epoch9.pth",
-                         "../NegCLIP/weights/negclip-epoch10-lr5e-06_epoch9.pth"]
+    NEG_WEIGHTS_PATHS = ["../NegCLIP/weights/negclip-train-newloss-epoch10-lr5e-06_epoch9.pth"]
     MYCLIP_WEIGHTS_PATH = "../CLIP/my_clip_weights.pth"
 
     models_to_test = [arg for arg in sys.argv]

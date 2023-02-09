@@ -27,3 +27,5 @@ CLIP/my_clip_weights/
 CLIP/my_clip_weights.pth
 Text_FineTuning/dev.ipynb
 Text_FineTuning/tsne_demo.py
+Text_FineTuning/runs/
+Text_FineTuning/weights/

@@ -1,9 +1,5 @@
 import sys
 import os
-import os
-import sys
-
-from COCO_Dataset import COCODataset
 from torch.utils.data import DataLoader
 import clip
 import torch
@@ -16,11 +12,11 @@ from torch.utils.tensorboard import SummaryWriter
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
-
+from NegCLIP.COCO_Dataset import COCODataset
 
 def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, coco_order_loader, max_epochs, device):
 
-    run = f"negclip-epoch{max_epochs}-lr{LR}"
+    run = f"negclip-textft-epoch{max_epochs}-lr{LR}"
     writer = SummaryWriter(log_dir="runs/"+run)
 
     for epoch in tqdm(range(max_epochs)):
@@ -100,7 +96,7 @@ if __name__ == "__main__":
     MAX_EPOCHS = 10
     WARMUP_STEPS = 50
     SHUFFLE_DTS = False
-    LR = 1e-6  # picked one of the three proposed : {1e − 5, 5e − 6, 1e − 6}
+    LR = 5e-6  # picked one of the three proposed : {1e − 5, 5e − 6, 1e − 6}
     VGA_VGR_PATH = "../ARO_benchmark/VGA_VGR/"
     COCO_ORDER_PATH = "../ARO_benchmark/COCO_Order/captions_shuffled_captions.json"
     NB_TESTCASES = 1000
