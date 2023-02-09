@@ -9,24 +9,39 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from CLIP.my_clip import Clip as MyClip
 
-def evaluate(dataloader, model, device):
+def evaluate(dataset, model, device, preprocess):
     acc = 0
-    for i, (image, label) in tqdm(enumerate(dataloader), leave=False, total=len(loader)):
-        image_input = image.to(device)
-        label = label.to(device)
-        text_input = torch.cat([clip.tokenize(f"a photo of a {c}") for c in cifar100.classes]).to(device)
+    # for i, (image, label) in tqdm(enumerate(dataloader), leave=False, total=len(loader)):
+    #     image_input = image.to(device)
+    #     label = label.to(device)
+    #     text_input = torch.cat([clip.tokenize(f"a photo of a {c}") for c in cifar100.classes]).to(device)
+    #     # Calculate features
+    #     with torch.no_grad():
+    #         image_features = model.encode_image(image_input)
+    #         text_features = model.encode_text(text_input)
+    #     image_features /= image_features.norm(dim=-1, keepdim=True)
+    #     text_features /= text_features.norm(dim=-1, keepdim=True)
+    #     similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+    #     pred = similarity.argmax() #pas sur du 0
+
+    for i in tqdm(range(len(dataset)), leave=False, total=len(dataset)):
+        image, class_id = dataset[i]
+        
+        image_input = preprocess(image).unsqueeze(0).to(device)
+        text_inputs = torch.cat([clip.tokenize(f"a photo of a {c}") for c in cifar100.classes]).to(device)
+
         # Calculate features
         with torch.no_grad():
             image_features = model.encode_image(image_input)
-            text_features = model.encode_text(text_input)
+            text_features = model.encode_text(text_inputs)
+
         image_features /= image_features.norm(dim=-1, keepdim=True)
         text_features /= text_features.norm(dim=-1, keepdim=True)
         similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
-        pred = similarity.argmax() #pas sur du 0
-
-        if pred == label:
+        pred = similarity[0].argmax()
+        if pred == class_id:
             acc += 1
-    return acc / len(dataloader)
+    return acc / len(dataset)
 
 if __name__ == "__main__":
     #hyperparameters 
@@ -39,7 +54,7 @@ if __name__ == "__main__":
     model, preprocess = clip.load('ViT-B/32', device)
 
     # Download the dataset
-    cifar100 = CIFAR100(root=os.path.expanduser("CIFAR/"), download=True, train=False, transform=preprocess)
+    cifar100 = CIFAR100(root=os.path.expanduser("~/.cache"), download=True, train=False)
     loader = DataLoader(cifar100, batch_size=BATCH_SIZE, shuffle=True)
 
     if "negclip" in models_to_test:
@@ -91,7 +106,7 @@ if __name__ == "__main__":
         print("Evaluation of clip on CIFAR")
 
 
-        acc_cifar = evaluate(loader, model, device)
+        acc_cifar = evaluate(cifar100, model, device, preprocess)
         print("accuracy cifar: ", acc_cifar)
 
         #save results
