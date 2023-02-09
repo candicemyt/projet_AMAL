@@ -13,6 +13,7 @@ def evaluate(dataloader, model, device):
     acc = 0
     for i, (image, label) in tqdm(enumerate(dataloader), leave=False, total=len(loader)):
         image_input = image.to(device)
+        label = label.to(device)
         text_input = torch.cat([clip.tokenize(f"a photo of a {c}") for c in cifar100.classes]).to(device)
         # Calculate features
         with torch.no_grad():
@@ -21,7 +22,8 @@ def evaluate(dataloader, model, device):
         image_features /= image_features.norm(dim=-1, keepdim=True)
         text_features /= text_features.norm(dim=-1, keepdim=True)
         similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
-        pred = similarity[0].argmax() #pas sur du 0
+        pred = similarity.argmax() #pas sur du 0
+
         if pred == label:
             acc += 1
     return acc / len(dataloader)
@@ -37,11 +39,11 @@ if __name__ == "__main__":
     model, preprocess = clip.load('ViT-B/32', device)
 
     # Download the dataset
-    cifar100 = CIFAR100(root=os.path.expanduser("~/.cache"), download=True, train=False, transform=preprocess)
-    loader = DataLoader(cifar100, batch_size=BATCH_SIZE)
+    cifar100 = CIFAR100(root=os.path.expanduser("CIFAR/"), download=True, train=False, transform=preprocess)
+    loader = DataLoader(cifar100, batch_size=BATCH_SIZE, shuffle=True)
 
     if "negclip" in models_to_test:
-        print("Evaluation of clip on CIFAR")
+        print("Evaluation of negclip on CIFAR")
 
         # Load the model
         weight_path = "../NegCLIP/weights/negclip-train-newloss-epoch10-lr5e-06_epoch9.pth"
@@ -85,5 +87,20 @@ if __name__ == "__main__":
 
         res_myclip_file.write("CIFAR100 : " + str(acc_cifar) + "\n")
     
+    elif "clip" in models_to_test:
+        print("Evaluation of clip on CIFAR")
+
+
+        acc_cifar = evaluate(loader, model, device)
+        print("accuracy cifar: ", acc_cifar)
+
+        #save results
+        res_negclip_path = "./NegCLIP_perf_CIFAR.txt"
+        if os.path.exists(res_negclip_path):
+            res_myclip_file = open(res_negclip_path, 'w')
+        else:
+            res_myclip_file = open(res_negclip_path, 'x')
+
+        res_myclip_file.write("CIFAR100 : " + str(acc_cifar) + "\n")
 
     
