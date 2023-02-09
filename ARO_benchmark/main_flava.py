@@ -17,6 +17,8 @@ if __name__ == "__main__":
     flava_model = FlavaModel.from_pretrained("facebook/flava-full")
     processor = FlavaImageProcessor.from_pretrained("facebook/flava-full")
     tokenizer = BertTokenizerFast.from_pretrained("facebook/flava-full")
+    flava_model = flava_model.float()
+    flava_model.eval()
 
     vgr_dts = VGDataset(VGA_VGR_PATH + f"/{SET_TYPE}/dataset_relations.csv", VGA_VGR_PATH + "images",
                             image_tranform=processor, text_transform=tokenizer)
