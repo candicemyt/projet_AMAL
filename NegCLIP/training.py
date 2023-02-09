@@ -35,29 +35,12 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             captions_neg = captions[:, 2:, :].flatten(0, 1)
             images = images.flatten(0, 1)  # BSCHW -> (B*S)CHW
 
-            ##### original loss ######
-
-            # # encoding + cosine similarity as logits
-            # logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
-            # logits_per_image = logits_per_image[:, :2 * b]  # keeping only the true captions to compute loss
-            # logits_per_text = logits_per_image.t()
-
-            # # loss
-            # labels = torch.arange(2 * b).to(device)
-
-            # loss_text = cross_entropy(logits_per_text, labels)
-            # loss_image = cross_entropy(logits_per_image, labels)
-            # loss = (loss_text + loss_image) / 2
-
-            ###########################
-
-            #####possible rectification #####
             # encoding + cosine similarity as logits
             logits_per_image, logits_per_text = model(images, torch.cat((captions_pos, captions_neg)))
             logits_per_image = logits_per_image  
             logits_per_text = logits_per_image[:, :2 * b].t() # keeping only the true captions to compute loss
-
             num_logits = logits_per_image.shape[0]
+
             # loss
             labels = torch.arange(num_logits).to(device)
 
@@ -65,12 +48,11 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             loss_image = cross_entropy(logits_per_image, labels)
             loss = (loss_text + loss_image) / 2
 
-            ##################################
             loss.backward()
             optimizer.step()
             scheduler.step()
 
-            #Clip the logit scale to increase stability as suggested in CLIP original paper
+            # Clip the logit scale to increase stability as suggested in CLIP original paper
             with torch.no_grad():
                 model.logit_scale.clamp_(0, np.log(100))
 
