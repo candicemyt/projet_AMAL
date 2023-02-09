@@ -7,7 +7,7 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from transformers import FlavaProcessor, FlavaModel
+from transformers import FlavaModel, FlavaImageProcessor, BertTokenizerFast
 if __name__ == "__main__":
     VGA_VGR_PATH = "VGA_VGR/"
     COCO_ORDER_PATH = "COCO_Order/captions_shuffled_captions.json"
@@ -15,17 +15,19 @@ if __name__ == "__main__":
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     flava_model = FlavaModel.from_pretrained("facebook/flava-full")
-    flava_processor = FlavaProcessor.from_pretrained("facebook/flava-full")
+    processor = FlavaImageProcessor.from_pretrained("facebook/flava-full")
+    tokenizer = BertTokenizerFast.from_pretrained("facebook/flava-full")
+
     vgr_dts = VGDataset(VGA_VGR_PATH + f"/{SET_TYPE}/dataset_relations.csv", VGA_VGR_PATH + "images",
-                            image_tranform=flava_processor.image_processor_class, text_transform=flava_processor.tokenizer_class)
+                            image_tranform=processor, text_transform=tokenizer)
     vgr_loader = DataLoader(vgr_dts)
 
     vga_dts = VGDataset(VGA_VGR_PATH + f"/{SET_TYPE}/dataset_attributes.csv", VGA_VGR_PATH + "images",
-                            image_tranform=flava_processor.image_processor_class, text_transform=flava_processor.tokenizer_class)
+                            image_tranform=processor, text_transform=tokenizer)
     vga_loader = DataLoader(vga_dts)
 
     coco_order_dts = COCOOrderDataset(COCO_ORDER_PATH, f'../COCO/val2014/COCO_val2014_', SET_TYPE,
-                                          image_tranform=flava_processor.image_processor_class, text_transform=flava_processor.tokenizer_class)
+                            image_tranform=processor, text_transform=tokenizer)
     coco_order_loader = DataLoader(coco_order_dts)
 
             
