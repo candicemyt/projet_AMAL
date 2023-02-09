@@ -31,6 +31,9 @@ if __name__ == "__main__":
     image = Image.open(requests.get(url, stream=True).raw)
     texts = ["an image of a cat", "an image of a duck", "an image of a dog"]
 
-    text_inputs = clip.tokenize(texts)
-    image_input = preprocess(image)
+    text_inputs = clip.tokenize(texts).to(device)
+    image_input = preprocess(image).to(device)
+
+    print(model(image_input, text_inputs))
+
 
