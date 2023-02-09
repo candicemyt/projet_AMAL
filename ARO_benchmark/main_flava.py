@@ -6,8 +6,8 @@ import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
+from transformers import FlavaModel, FlavaImageProcessor, BertTokenizerFast 
 
-from transformers import FlavaModel, FlavaImageProcessor, BertTokenizerFast
 if __name__ == "__main__":
     VGA_VGR_PATH = "VGA_VGR/"
     COCO_ORDER_PATH = "COCO_Order/captions_shuffled_captions.json"
@@ -17,6 +17,8 @@ if __name__ == "__main__":
     flava_model = FlavaModel.from_pretrained("facebook/flava-full")
     processor = FlavaImageProcessor.from_pretrained("facebook/flava-full")
     tokenizer = BertTokenizerFast.from_pretrained("facebook/flava-full")
+    flava_model = flava_model.float()
+    flava_model.eval()
 
     vgr_dts = VGDataset(VGA_VGR_PATH + f"/{SET_TYPE}/dataset_relations.csv", VGA_VGR_PATH + "images",
                             image_tranform=processor, text_transform=tokenizer)
