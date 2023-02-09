@@ -23,6 +23,7 @@ if __name__ == "__main__":
                          "../NegCLIP/weights/negclip-train-newloss-epoch10-lr5e-06_epoch6.pth",
                          "../NegCLIP/weights/negclip-train-newloss-epoch10-lr5e-06_epoch8.pth",
                          "../Text_FineTuning/weights/negclip-textft-epoch10-lr5e-06_epoch9.pth"]
+    MYCLIP_WEIGHTS_PATH = ""
 
     models_to_test = [arg for arg in sys.argv]
 
@@ -91,7 +92,7 @@ if __name__ == "__main__":
                 res_negclip_file.write(weight_path.split('/')[3] + "\n")
                 res_negclip_file.write("vgr : " + str(acc_vgr) + "\n")
                 res_negclip_file.write("vga : " + str(acc_vga) + "\n")
-                res_negclip_file.write("coco-order : " + str(acc_coco_ord))
+                res_negclip_file.write("coco-order : " + str(acc_coco_ord)+"\n\n")
 
         if "myclip" in models_to_test:
             my_clip = MyClip(embedding_size=512, vision_embedding=768, seq_length=77,
