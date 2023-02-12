@@ -49,9 +49,9 @@ if __name__ == "__main__":
     SET_TYPE = "train"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-    flava_model = FlavaForPreTraining.from_pretrained("facebook/flava-full")
-    processor = FlavaImageProcessor.from_pretrained("facebook/flava-full")
-    tokenizer = BertTokenizerFast.from_pretrained("facebook/flava-full")
+    flava_model = FlavaForPreTraining.from_pretrained("facebook/flava-full", cache_dir = "FLAVA/")
+    processor = FlavaImageProcessor.from_pretrained("facebook/flava-full", cache_dir = "FLAVA/")
+    tokenizer = BertTokenizerFast.from_pretrained("facebook/flava-full", cache_dir = "FLAVA/")
     
     flava_model = flava_model.float()
     flava_model.eval()
