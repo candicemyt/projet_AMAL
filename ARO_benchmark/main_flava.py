@@ -20,22 +20,22 @@ def evaluate_flava(dataloader, model, device):
     for _, vgr_data in enumerate(dataloader):
         image, captions = vgr_data
         image = image.to(device)
+        captions = captions.to(device)
+
         caption = {
-            "input_ids" : captions.input_ids[0],
-            "token_type_ids" : captions.token_type_ids[0],
-            "attention_mask" : captions.attention_mask[0]
+            "input_ids" : captions.input_ids[0].unsqueeze(0),
+            "token_type_ids" : captions.token_type_ids[0].unsqueeze(0),
+            "attention_mask" : captions.attention_mask[0].unsqueeze(0)
         }
-        caption = caption.to(device)
         outputs = model(**image, **caption)
         value0 = outputs.contrastive_logits_per_image.item()
         probmax = outputs.contrastive_logits_per_image.item()
         for i in range(1, captions.input_ids.size()[0]) :
             caption = {
-            "input_ids" : captions.input_ids[i],
-            "token_type_ids" : captions.token_type_ids[i],
-            "attention_mask" : captions.attention_mask[i]
+            "input_ids" : captions.input_ids[i].unsqueeze(0),
+            "token_type_ids" : captions.token_type_ids[i].unsqueeze(0),
+            "attention_mask" : captions.attention_mask[i].unsqueeze(0)
             }
-            caption = caption.to(device)
             outputs = model(**image, **caption)
             probmax = max(probmax, outputs.contrastive_logits_per_image.item())
         
@@ -72,11 +72,11 @@ if __name__ == "__main__":
     coco_order_loader = DataLoader(coco_order_dts)
 
     print("evaluation starts")
-    acc_vgr = evaluate(vgr_loader, flava_model, DEVICE)
+    acc_vgr = evaluate_flava(vgr_loader, flava_model, DEVICE)
     print(acc_vgr)
-    acc_vga = evaluate(vga_loader, flava_model, DEVICE)
+    acc_vga = evaluate_flava(vga_loader, flava_model, DEVICE)
     print(acc_vga)
-    acc_coco_ord = evaluate(coco_order_loader, flava_model, DEVICE)
+    acc_coco_ord = evaluate_flava(coco_order_loader, flava_model, DEVICE)
     print(acc_coco_ord)
 
     # save results
