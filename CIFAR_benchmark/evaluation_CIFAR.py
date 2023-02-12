@@ -107,7 +107,7 @@ if __name__ == "__main__":
         print("Evaluation of negclip ftxt on CIFAR")
 
         # Load the model
-        weight_path = "../Text_FineTuning/weights/neclip-ftxt-lr5e-06-epoch9.pth"
+        weight_path = "../Text_FineTuning/weights/negclip-textft-epoch10-lr5e-06_epoch9.pth"
         model.load_state_dict(torch.load(weight_path, map_location=device))
 
         acc_cifar = evaluate(cifar100, model, device, preprocess)
