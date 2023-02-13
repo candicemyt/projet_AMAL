@@ -1,12 +1,6 @@
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
-import json
 import torch
 from torchvision.datasets import CocoDetection
-from PIL import Image
-import os
 
-# TODO : ignore strong alt for CLIP-FT
 
 def choose_neg_caption_per_caption(all_neg_captions):
     """
@@ -34,7 +28,6 @@ class COCODataset(CocoDetection):
 
         # dictionnary with key : image index, value : list of id of 3 nearest neighbors of each image
         self.nearest_neighbors = nearest_neighbors
-
 
     def _load_target(self, id: int):
         anns = super()._load_target(id)
@@ -73,4 +66,3 @@ class COCODataset(CocoDetection):
         images = torch.cat((image, strong_alt_image))
 
         return images, captions
-

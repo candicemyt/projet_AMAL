@@ -4,16 +4,18 @@ import torch
 from torchvision.datasets import CIFAR100
 from tqdm import tqdm
 import sys
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from CLIP.my_clip import Clip as MyClip
+
 
 def evaluate(dataset, model, device, preprocess):
     acc = 0
 
     for i in tqdm(range(len(dataset)), leave=False, total=len(dataset)):
         image, class_id = dataset[i]
-        
+
         image_input = preprocess(image).unsqueeze(0).to(device)
         text_inputs = torch.cat([clip.tokenize(f"a photo of a {c}") for c in cifar100.classes]).to(device)
 
@@ -30,13 +32,14 @@ def evaluate(dataset, model, device, preprocess):
             acc += 1
     return acc / len(dataset)
 
+
 if __name__ == "__main__":
-    #hyperparameters 
+    # hyperparameters
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     models_to_test = [arg for arg in sys.argv]
-    
-    #load model and preprocessing
+
+    # load model and preprocessing
     model, preprocess = clip.load('ViT-B/32', device)
 
     # Download the dataset
@@ -52,7 +55,7 @@ if __name__ == "__main__":
         acc_cifar = evaluate(cifar100, model, device, preprocess)
         print("accuracy cifar: ", acc_cifar)
 
-        #save results
+        # save results
         res_negclip_path = "./NegCLIP_perf_CIFAR.txt"
         if os.path.exists(res_negclip_path):
             res_myclip_file = open(res_negclip_path, 'w')
@@ -68,8 +71,8 @@ if __name__ == "__main__":
         # Load the model
 
         model = MyClip(embedding_size=512, vision_embedding=768, seq_length=77,
-                             num_heads=8, vocab_size=49408, n_blocks=12,
-                             output_dim=512, kernel_size=32, stride=32, input_resolution=224, device=device)
+                       num_heads=8, vocab_size=49408, n_blocks=12,
+                       output_dim=512, kernel_size=32, stride=32, input_resolution=224, device=device)
 
         weight_path = "../CLIP/weights/my_clip.pth"
         model.load_state_dict(torch.load(weight_path, map_location=device))
@@ -78,7 +81,7 @@ if __name__ == "__main__":
         acc_cifar = evaluate(cifar100, model, device, preprocess)
         print("accuracy myclip cifar: ", acc_cifar)
 
-        #save results
+        # save results
         res_negclip_path = "./MyCLIP_perf_CIFAR.txt"
         if os.path.exists(res_negclip_path):
             res_myclip_file = open(res_negclip_path, 'w')
@@ -86,15 +89,14 @@ if __name__ == "__main__":
             res_myclip_file = open(res_negclip_path, 'x')
 
         res_myclip_file.write("CIFAR100 : " + str(acc_cifar) + "\n")
-    
+
     elif "clip" in models_to_test:
         print("Evaluation of clip on CIFAR")
-
 
         acc_cifar = evaluate(cifar100, model, device, preprocess)
         print("accuracy cifar: ", acc_cifar)
 
-        #save results
+        # save results
         res_negclip_path = "./CLIP_perf_CIFAR.txt"
         if os.path.exists(res_negclip_path):
             res_myclip_file = open(res_negclip_path, 'w')
@@ -107,13 +109,13 @@ if __name__ == "__main__":
         print("Evaluation of negclip ftxt on CIFAR")
 
         # Load the model
-        weight_path = "../Text_FineTuning/weights/negclip-textft-epoch10-lr5e-06_epoch9.pth"
+        weight_path = "../NegCLIP_FTXT/weights/negclip-textft-epoch10-lr5e-06_epoch9.pth"
         model.load_state_dict(torch.load(weight_path, map_location=device))
 
         acc_cifar = evaluate(cifar100, model, device, preprocess)
         print("accuracy cifar: ", acc_cifar)
 
-        #save results
+        # save results
         res_negclip_path = "./NegCLIP-FTXT_perf_CIFAR.txt"
         if os.path.exists(res_negclip_path):
             res_myclip_file = open(res_negclip_path, 'w')

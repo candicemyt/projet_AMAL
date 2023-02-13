@@ -16,8 +16,8 @@ class COCODatasetImSim(CocoDetection):
         id = self.ids[index]
         image = self._load_image(id)
 
-        if self.transform is not None: 
-           image = self.transform(image)
+        if self.transform is not None:
+            image = self.transform(image)
         return id, image
 
 
@@ -33,12 +33,12 @@ def compute_pairwise_sim(dataloader, file_writer, model, device):
             encoded_images = torch.cat((encoded_images, model.encode_image(images.to(device))))
 
         nb_images = encoded_images.shape[0]
-        beg = (part-1) * (nb_images//5)
-        end = beg + (nb_images//5)
+        beg = (part - 1) * (nb_images // 5)
+        end = beg + (nb_images // 5)
         if part == 5:
             end = nb_images
         print("Boucle de calcul de similarité")
-        for i, image1_features in tqdm(enumerate(encoded_images[beg:end]), total=end-beg):
+        for i, image1_features in tqdm(enumerate(encoded_images[beg:end]), total=end - beg):
             similarities = torch.zeros(encoded_images.shape[0], device=device)
             image_id = ids[i]
             for j, image2_features in enumerate(encoded_images):
@@ -50,7 +50,6 @@ def compute_pairwise_sim(dataloader, file_writer, model, device):
             else:
                 new_row = [image_id] + list(ids_sorted[0:3])
                 file_writer.writerow([int(i) for i in new_row])
-
 
 
 if __name__ == '__main__':

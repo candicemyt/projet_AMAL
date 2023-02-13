@@ -25,11 +25,12 @@ GQA_raw/
 CLIP/func_attention.py
 CLIP/my_clip_weights/
 CLIP/my_clip_weights.pth
-Text_FineTuning/dev.ipynb
-Text_FineTuning/tsne_demo.py
-Text_FineTuning/runs/
-Text_FineTuning/weights/
+NegCLIP_FTXT/dev.ipynb
+NegCLIP_FTXT/tsne_demo.py
+NegCLIP_FTXT/runs/
+NegCLIP_FTXT/weights/
 ARO_benchmark/FLAVA/
+ARO_benchmark/myclip_perf_aro.txt
 CIFAR_benchmark/CIFAR/
 CIFAR_benchmark/MyCLIP_perf_CIFAR.txt
 CIFAR_benchmark/NegCLIP_perf_CIFAR.txt

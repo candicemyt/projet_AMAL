@@ -9,15 +9,16 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.nn.functional import cross_entropy
 from torch.utils.tensorboard import SummaryWriter
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 from ARO_benchmark.evaluation_ARO import VGDataset, COCOOrderDataset, evaluate
 from NegCLIP.COCO_Dataset import COCODataset
 
-def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, coco_order_loader, max_epochs, device):
 
+def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, coco_order_loader, max_epochs, device):
     run = f"negclip-textft-epoch{max_epochs}-lr{LR}"
-    writer = SummaryWriter(log_dir="runs/"+run)
+    writer = SummaryWriter(log_dir="runs/" + run)
 
     for epoch in tqdm(range(max_epochs)):
         # TRAIN
@@ -34,38 +35,38 @@ def training(model, optimizer, scheduler, coco_loader, vgr_loader, vga_loader, c
             captions_neg = captions[:, 2:, :].flatten(0, 1)
             images = images.flatten(0, 1)  # BSCHW -> (B*S)CHW
 
-            #forward pass + normalization
-            encoded_text = model.encode_text(torch.cat((captions_pos, captions_neg))) 
-            encoded_text = encoded_text/encoded_text.norm(dim=1, keepdim=True)
-            encoded_image = model.encode_image(images) 
-            encoded_image = encoded_image/encoded_image.norm(dim=1, keepdim=True)
+            # forward pass + normalization
+            encoded_text = model.encode_text(torch.cat((captions_pos, captions_neg)))
+            encoded_text = encoded_text / encoded_text.norm(dim=1, keepdim=True)
+            encoded_image = model.encode_image(images)
+            encoded_image = encoded_image / encoded_image.norm(dim=1, keepdim=True)
 
             sim_text_text = model.logit_scale * encoded_text @ encoded_text.t()
             logits = model.logit_scale * encoded_image @ encoded_text.t()
 
             num_logits = logits.shape[0]
             # loss
-            labels_text = torch.arange(2*num_logits).to(device)
+            labels_text = torch.arange(2 * num_logits).to(device)
             labels_image = torch.arange(num_logits).to(device)
             loss_text_text = cross_entropy(sim_text_text, labels_text)
             loss_image_text = cross_entropy(logits, labels_image)
-            loss = (loss_image_text+loss_text_text)/2
-            
+            loss = (loss_image_text + loss_text_text) / 2
+
             loss.backward()
             optimizer.step()
             scheduler.step()
 
-            #Clip the logit scale to increase stability as suggested in CLIP original paper
+            # Clip the logit scale to increase stability as suggested in CLIP original paper
             with torch.no_grad():
                 model.logit_scale.clamp_(0, np.log(100))
 
             # logs
             step = epoch * len(coco_loader) + i
 
-            #compute similarity between pos and neg caption
-            sim = torch.tensor([logits[i,(i+b)%(2*b)] for i in range(2*b)]).mean() 
+            # compute similarity between pos and neg caption
+            sim = torch.tensor([logits[i, (i + b) % (2 * b)] for i in range(2 * b)]).mean()
 
-            #add logs
+            # add logs
             writer.add_scalar("loss/train", loss.item(), step)
             writer.add_scalar("loss/train", loss.item(), step)
             writer.add_scalar("similarity_pos_neg/train", sim.item(), step)

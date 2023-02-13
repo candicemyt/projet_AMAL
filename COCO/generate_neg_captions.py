@@ -1,8 +1,8 @@
 import json
 import spacy
-from os import path
 from tqdm import tqdm
 from itertools import combinations
+
 
 def shuffle(caption, first_token, second_token):
     """
@@ -49,8 +49,7 @@ def shuffle_caption(caption):
 
 
 def generate_neg_captions(set_type):
-
-    #open file
+    # open file
     part = 1
     with open(f"annotations/captions_part{part}_{set_type}2014.json", 'r') as f:
         data = json.load(f)
@@ -61,7 +60,7 @@ def generate_neg_captions(set_type):
     # shuffling the captions
     for caption_data in tqdm(raw_captions_list):
         pos_caption, neg_captions = shuffle_caption(caption_data["caption"])
-        if len(neg_captions) > 0: # we keep only the captions that have negative captions
+        if len(neg_captions) > 0:  # we keep only the captions that have negative captions
             caption_data["neg_captions"] = neg_captions
             processed_captions_list.append(caption_data)
 
