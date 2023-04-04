@@ -1,9 +1,7 @@
-# Project master 2 : (AMAL)
+# Project master 2 : (Advanced MAchine Learning)
 
 Review of the article : When and why vision-language models behave like bags-of-words, and what to do about it?
 by Mert Yuksekgonul, Federico Bianchi, Pratyusha Kalluri, Dan Jurafsky, James Zou. 
-
-
 
 ## Re-implementation :
 - ARO benchmark
@@ -17,3 +15,7 @@ by Mert Yuksekgonul, Federico Bianchi, Pratyusha Kalluri, Dan Jurafsky, James Zo
 CLIP, which would allow better discrimination between captions and
 their permuted version. 
 - Evaluation of NegCLIP_FTXT on ARO and CIFAR100
+
+
+
+The work is summarized on a poster : poster.pdf
