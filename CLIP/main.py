@@ -14,15 +14,15 @@ import clip
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     _, preprocess = clip.load("ViT-B/32", device="cpu")
-    model = Clip(embedding_size=512, #certain
-                vision_embedding=768, #certain
-                seq_length=77, #presque sur
-                num_heads=8, #sur
-                vocab_size=49408, #presque sur
-                n_blocks=12, #certain
-                output_dim=512, #certain
-                kernel_size=32, #certain
-                stride=32, #certain
+    model = Clip(embedding_size=512,
+                vision_embedding=768,
+                seq_length=77,
+                num_heads=8,
+                vocab_size=49408,
+                n_blocks=12,
+                output_dim=512,
+                kernel_size=32,
+                stride=32,
                 input_resolution=224,
                 device=device).to(device)
 
